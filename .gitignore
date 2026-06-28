@@ -1,0 +1,8 @@
+#
+.idea
+D/
+.reasonix
+.m2-repo
+target
+tmp
+node_modules/

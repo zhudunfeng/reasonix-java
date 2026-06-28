@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reansonix-config
+  namespace: reansonix
+data:
+  application.yml: |
+    reasonix:
+      provider:
+        default-model: deepseek-v4-flash
+      serve:
+        port: 8080
+        auth-mode: none
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reansonix-backend
+  namespace: reansonix
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: reansonix-backend
+  template:
+    metadata:
+      labels:
+        app: reansonix-backend
+    spec:
+      containers:
+        - name: backend
+          image: reansonix-java:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: reansonix-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reansonix-backend
+  namespace: reansonix
+spec:
+  selector:
+    app: reansonix-backend
+  ports:
+    - port: 80
+      targetPort: 8080

@@ -1,0 +1,159 @@
+﻿# =========================================
+# Reansonix - Reasonix Java 复刻版配置
+# =========================================
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: reansonix
+  ai:
+    openai:
+      base-url: https://api.deepseek.com/v1
+      api-key: ${DEEPSEEK_API_KEY:}
+      chat:
+        options:
+          model: deepseek-chat
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+
+# =========================================
+# Reasonix 核心配置
+# =========================================
+reasonix:
+  # ---- Agent 行为配置 ----
+  agent:
+    default-model: deepseek-v4-flash
+    max-steps: 50
+    temperature: 0.7
+    auto-plan: false
+    compact-ratio: 0.85
+    planner-model: deepseek-v4-flash
+
+  # ---- 供应商-模型两层配置 ----
+  provider:
+    default-model: deepseek-v4-flash
+    timeout: 60s
+    suppliers:
+      - id: deepseek
+        provider-type: openai-compatible
+        base-url: https://api.deepseek.com/v1
+        api-key: ${DEEPSEEK_API_KEY:}
+        enabled: true
+      - id: stepfun
+        provider-type: openai-compatible
+        base-url: https://api.stepfun.com/v1
+        api-key: ${STEPFUN_API_KEY:}
+        enabled: true
+      - id: ollama
+        provider-type: ollama
+        base-url: http://localhost:11434
+        api-key: \"\"
+        enabled: true
+    models:
+      - id: deepseek-v4-flash
+        supplier-id: deepseek
+        model-name: deepseek-chat
+        stream: true
+        enabled: true
+      - id: stepfun-3.7-flash
+        supplier-id: stepfun
+        model-name: step-3.7-flash
+        stream: true
+        enabled: true
+      - id: ollama-llama3.2
+        supplier-id: ollama
+        model-name: llama3.2
+        stream: true
+        enabled: true
+
+  # ---- 工具配置 ----
+  tools:
+    enabled: []
+    bash-timeout-seconds: 60
+
+  # ---- Skill 配置 ----
+  skills:
+    paths:
+      - ./workspace/skills
+      - ./skills
+    disabled: []
+
+  # ---- 权限配置 ----
+  permissions:
+    mode: ask
+    deny: []
+    allow: []
+
+  # ---- HTTP 服务配置 ----
+  serve:
+    auth-mode: none
+    port: 8080
+
+  # ---- Sub-Agent 配置 ----
+  subagent:
+    max-parallel: 2
+    agents:
+      - name: WeatherAgent
+        description: \"天气查询 Agent\"
+        tools: [web_fetch]
+        workspace-mode: ISOLATED
+      - name: OrderAgent
+        description: \"订单查询 Agent\"
+        tools: [web_fetch]
+        workspace-mode: ISOLATED
+
+# =========================================
+# AgentScope 工作区
+# =========================================
+agentscope:
+  workspace:
+    root: ${AGENTSCOPE_WORKSPACE_ROOT:./workspace}
+    orchestrator-dir: orchestrator
+  model:
+    default-model: deepseek-v4-flash
+    timeout: 60s
+    suppliers:
+      - id: deepseek
+        provider-type: openai-compatible
+        base-url: https://api.deepseek.com/v1
+        api-key: ${DEEPSEEK_API_KEY:}
+        enabled: true
+      - id: stepfun
+        provider-type: openai-compatible
+        base-url: https://api.stepfun.com/v1
+        api-key: ${STEPFUN_API_KEY:}
+        enabled: true
+      - id: ollama
+        provider-type: ollama
+        base-url: http://localhost:11434
+        api-key: \"\"
+        enabled: true
+    models:
+      - id: deepseek-v4-flash
+        supplier-id: deepseek
+        model-name: deepseek-chat
+        stream: true
+        enabled: true
+      - id: stepfun-3.7-flash
+        supplier-id: stepfun
+        model-name: step-3.7-flash
+        stream: true
+        enabled: true
+  skills:
+    dynamic:
+      enabled: true
+      scan-interval: 5s
+      scan-directories:
+        - ./workspace/skills
+        - ./skills
+  toolkit:
+    mock-enabled: true
+    default-timeout: 15s
+  subagent:
+    route-strategy: rule-first-then-model
+    max-parallel: 2
+    default-timeout: 40s
+  chat:
+    stream-timeout: 300s

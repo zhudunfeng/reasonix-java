@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - REASONIX_THEME=dark
+    volumes:
+      - ./workspace:/app/workspace
+
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./web:/app/web
+    command: sh -c "cd web && pnpm install && pnpm dev"
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development

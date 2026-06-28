@@ -1,0 +1,2 @@
+[permissions]
+allow = ["Bash(ls D:\\\\IdeaProjects\\\\reasonix 2>$null; echo '---'; ls D:\\\\IdeaProjects\\\\spring-ai-explore\\\\agentscope-java-example 2>$null)", "Edit", "Bash(wsl bash -lc \"cd /mnt/d/IdeaProjects/reansonix-java && /root/.sdkman/candidates/maven/3.9.16/bin/mvn -q -B -s /mnt/d/IdeaProjects/reansonix-java/tmp/settings.xml -U -DskipTests=true clean compile\")", "review"]

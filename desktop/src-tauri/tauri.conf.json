@@ -1,0 +1,40 @@
+{
+  "build": {
+    "beforeDevCommand": "pnpm --dir web dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "pnpm --dir web build",
+    "frontendDist": "../web/dist"
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "productName": "Reansonix",
+  "version": "0.1.0",
+  "identifier": "com.reansonix.desktop",
+  "plugins": {},
+  "app": {
+    "windows": [
+      {
+        "title": "Reansonix",
+        "width": 1280,
+        "height": 800,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "trayIcon": {
+      "iconPath": "icons/32x32.png",
+      "iconAsTemplate": true
+    }
+  }
+}
