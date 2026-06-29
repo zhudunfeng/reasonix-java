@@ -14,13 +14,15 @@ import org.springframework.stereotype.Component;
 public class SubagentConfigInitializer {
 
     private final SubagentRegistry subagentRegistry;
+    private final ReasonixConfig reasonixConfig;
 
-    public SubagentConfigInitializer(SubagentRegistry subagentRegistry) {
+    public SubagentConfigInitializer(SubagentRegistry subagentRegistry, ReasonixConfig reasonixConfig) {
         this.subagentRegistry = subagentRegistry;
+        this.reasonixConfig = reasonixConfig;
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    public void init(ReasonixConfig reasonixConfig) {
+    public void init(ApplicationReadyEvent event) {
         if (reasonixConfig.getSubagent() == null
                 || reasonixConfig.getSubagent().getAgents() == null) {
             return;
