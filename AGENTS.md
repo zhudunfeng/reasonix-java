@@ -37,7 +37,7 @@ Internal packages mirror the Reasonix Go modules:
 - Language: **Java 17** (minimum), **Java 21** preferred for Virtual Thread support.
 - Build tool: **Maven 3.9+** (aligns with the AgentScope-Java reference project).
 - Formatting: **Spotless** with the `google-java-format` preset; run `mvn spotless:apply` before committing.
-- Packages: use lowercase dot-separated names (e.g. `com.reansonix.agent`).
+- Packages: use lowercase dot-separated names (e.g. `com.reasonix.agent`).
 - Classes: `PascalCase`; interfaces begin with a capital `I` only when a concrete implementation suffix already exists (e.g. `ChatModel` not `IChatModel`).
 - Methods & variables: `camelCase`; constants `UPPER_SNAKE_CASE`.
 - Keep classes focused: one responsibility per class, following the Reasonix Go package conventions.

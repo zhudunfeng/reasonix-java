@@ -427,15 +427,15 @@ effort: high
 ### 6.1 AgentController（统一入口）
 
 ```java
-package com.reansonix.agent.controller;
+package com.reasonix.agent.controller;
 
 public interface AgentController {
     AgentResult execute(String query, String sessionId, @Nullable String modelId,
                         @Nullable AgentOptions options);
 
     Flux<AgentStreamEvent> executeStream(String query, String sessionId,
-                                          @Nullable String modelId,
-                                          @Nullable AgentOptions options);
+                                         @Nullable String modelId,
+                                         @Nullable AgentOptions options);
 
     CompactedSession compactSession(String sessionId);
 
@@ -446,7 +446,7 @@ public interface AgentController {
 ### 6.2 ReActLoop（核心执行器）
 
 ```java
-package com.reansonix.agent.loop;
+package com.reasonix.agent.loop;
 
 public class ReActLoop {
     public AgentResult execute(Session session, int maxSteps);
@@ -456,13 +456,17 @@ public class ReActLoop {
 ### 6.3 Tool 接口
 
 ```java
-package com.reansonix.tool;
+package com.reasonix.tool;
 
 public interface Tool {
     String name();
+
     String description();
+
     JsonNode schema();
+
     ToolResult execute(Context ctx, JsonNode args);
+
     boolean readOnly();
 }
 
@@ -474,31 +478,34 @@ public interface Previewer {
 ### 6.4 Skill 接口
 
 ```java
-package com.reansonix.skill;
+package com.reasonix.skill;
 
 public record Skill(
-    String name,
-    String description,
-    String body,
-    Scope scope,
-    Path path,
-    RunAs runAs,               // INLINE | SUBAGENT
-    List<String> allowedTools,
-    @Nullable String modelOverride,
-    @Nullable String effort
-) {}
+        String name,
+        String description,
+        String body,
+        Scope scope,
+        Path path,
+        RunAs runAs,               // INLINE | SUBAGENT
+        List<String> allowedTools,
+        @Nullable String modelOverride,
+        @Nullable String effort
+) {
+}
 
-public enum RunAs { INLINE, SUBAGENT }
-public enum Scope { PROJECT, CUSTOM, GLOBAL, BUILTIN }
+public enum RunAs {INLINE, SUBAGENT}
+
+public enum Scope {PROJECT, CUSTOM, GLOBAL, BUILTIN}
 ```
 
 ### 6.5 Provider 接口
 
 ```java
-package com.reansonix.provider;
+package com.reasonix.provider;
 
 public interface ChatModel {
     ChatResponse generate(List<Message> messages, GenerateOptions options);
+
     default Flux<ChatChunk> stream(List<Message> messages, GenerateOptions options) {
         throw new UnsupportedOperationException("Streaming not supported");
     }
@@ -752,14 +759,16 @@ Web 层共享与 CLI / Desktop 完全一致的 AgentController，不做业务逻
 
 ### 13.5 认证与安全
 
-通过 easonix.serve.auth-mode 配置：
+通过 
+easonix.serve.auth-mode 配置：
 
 | 值 | 行为 |
 |----|------|
 | 
 one | 开放访问（仅限本地开发）|
 | 	oken | URL 参数 ?token=… 或 HTTP Header 校验 |
-| password | bcrypt-hashed 密码，通过 easonix serve --hash-password 生成 |
+| password | bcrypt-hashed 密码，通过 
+easonix serve --hash-password 生成 |
 
 Authorization header 向后端 WAF 或反向代理透传；API Key 永远不出现在响应体中。
 
@@ -771,7 +780,8 @@ Authorization header 向后端 WAF 或反向代理透传；API Key 永远不出�
 | 状态管理 | Zustand | 会话状态、审批卡片状态 |
 | 网络 | native EventSource + etch | SSE 流式 + REST |
 | 样式 | Tailwind CSS 3 | 与 Reasonix Web UI 视觉一致 |
-| Markdown | eact-markdown | Agent 回答的 Markdown 渲染 |
+| Markdown | 
+eact-markdown | Agent 回答的 Markdown 渲染 |
 
 ### 13.7 前端包结构
 
@@ -884,7 +894,8 @@ Tauri Commands 是 Rust 端暴露给前端的薄代理，每个 Command 转发�
 
 ### 14.6 窗口与系统托盘
 
-- **默认窗口**：width: 900px、height: 680px，esizable: true，	itle: "Reansonix"。
+- **默认窗口**：width: 900px、height: 680px，
+esizable: true，	itle: "Reansonix"。
 - **系统托盘**：启动后最小化到托盘；单击托盘图标恢复窗口；右键菜单含「新建会话」「退出」。
 - **全局快捷键**：CmdOrCtrl+Shift+R 唤起/隐藏窗口；CmdOrCtrl+Enter 发送消息。
 
