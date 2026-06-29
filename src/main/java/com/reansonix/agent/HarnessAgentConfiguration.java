@@ -55,7 +55,21 @@ public class HarnessAgentConfiguration implements CommandLineRunner {
         System.out.println("[Reasonix] Agent 模块初始化完成");
         System.out.println("[Reasonix] 可用模型数量: " + modelRegistry.getModelIds().size());
         System.out.println("[Reasonix] 已注册工具数量: " + toolRegistry.getNames().size());
-        System.out.println("[Reasonix] 默认模型: " + reasonixConfig.getDefaultModel());
+        System.out.println("[Reasonix] 默认模型: " + resolveEffectiveDefaultModel());
         System.out.println("[Reasonix] 最大执行轮数: " + reasonixConfig.getMaxSteps());
+    }
+
+    /**
+     * 计算实际生效的默认模型 ID，与 {@link com.reansonix.provider.ProviderConfig} 保持一致。
+     *
+     * <p>优先级：reasonix.provider.default-model > reasonix.default-model > null。
+     */
+    private String resolveEffectiveDefaultModel() {
+        if (reasonixConfig.getProvider() != null
+                && reasonixConfig.getProvider().getDefaultModel() != null
+                && !reasonixConfig.getProvider().getDefaultModel().isBlank()) {
+            return reasonixConfig.getProvider().getDefaultModel();
+        }
+        return reasonixConfig.getDefaultModel();
     }
 }

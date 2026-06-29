@@ -16,7 +16,7 @@ import java.util.List;
 public class ReasonixConfig {
 
     private String defaultModel;
-    private int maxSteps;
+    private int maxSteps = 50;
     private double temperature;
     private boolean autoPlan;
     private double compactRatio;
