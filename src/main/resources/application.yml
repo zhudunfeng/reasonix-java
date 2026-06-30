@@ -7,22 +7,22 @@ server:
 
 spring:
   application:
-    name: reansonix
+    name: reasonix
 
 # =========================================
 # Reasonix 核心配置
 # =========================================
 reasonix:
-  default-model: stepfun-3.7-flash
+  default-model: step-3.7-flash
   max-steps: 50
   temperature: 0.7
   auto-plan: false
   compact-ratio: 0.85
-  planner-model: stepfun-3.7-flash
+  planner-model: step-3.7-flash
 
   # ---- 供应商-模型两层配置 ----
   provider:
-    default-model: stepfun-3.7-flash
+    default-model: step-3.7-flash
     timeout: 60s
     suppliers:
       - id: deepseek
@@ -32,7 +32,7 @@ reasonix:
         enabled: true
       - id: stepfun
         provider-type: openai-compatible
-        base-url: https://api.stepfun.com/v1
+        base-url: https://api.stepfun.com/step_plan/v1
         api-key: ${STEPFUN_API_KEY:}
         enabled: true
       - id: ollama
@@ -46,9 +46,9 @@ reasonix:
         model-name: deepseek-chat
         stream: true
         enabled: true
-      - id: stepfun-3.7-flash
+      - id: step-3.7-flash
         supplier-id: stepfun
-        model-name: stepfun-3.7-flash
+        model-name: step-3.7-flash
         stream: true
         enabled: true
       - id: ollama-llama3.2
