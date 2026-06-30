@@ -112,7 +112,7 @@ public class ReActLoop {
                 break;
             }
 
-            // 记录助手消息（包含工具调用）
+            // 将模型原始回复（含工具调用）中的纯文本部分记录到历史
             session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.ASSISTANT, content));
 
             // 执行工具调用
@@ -197,6 +197,9 @@ public class ReActLoop {
 
             // 继续下一轮，让模型根据工具结果生成最终回复
             lastContent = toolResultText;
+
+            // 本轮执行了工具调用，不应将含工具的原始回复误作为最终答案
+            // 让最后一轮（toolCalls.isEmpty() 分支）来赋值 finalAnswer
         }
 
         if (shouldCompact(session)) {
@@ -204,7 +207,9 @@ public class ReActLoop {
         }
 
         sessionStore.save(session);
-        return finalAnswer != null ? finalAnswer : lastContent;
+        // 若因 maxSteps 用完而退出循环（finalAnswer 仍为 null），
+        // 返回 lastContent（即最后一轮模型回复或工具输出），保证不返回 null
+        return finalAnswer != null ? finalAnswer : (lastContent != null ? lastContent : "");
     }
 
     private List<com.reasonix.provider.ChatMessage> buildPrompt(Session session, String toolSchemasJson) {

@@ -3,6 +3,9 @@ package com.reasonix.controller;
 import com.reasonix.agent.AgentController;
 import com.reasonix.agent.AgentResult;
 import com.reasonix.agent.StreamingEvent;
+import com.reasonix.config.ReasonixConfig;
+import com.reasonix.provider.ModelRegistry;
+import com.reasonix.provider.ModelResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -24,9 +27,15 @@ public class ChatController {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final AgentController agentController;
+    private final ModelRegistry modelRegistry;
+    private final ReasonixConfig reasonixConfig;
 
-    public ChatController(AgentController agentController) {
+    public ChatController(AgentController agentController,
+                          ModelRegistry modelRegistry,
+                          ReasonixConfig reasonixConfig) {
         this.agentController = agentController;
+        this.modelRegistry = modelRegistry;
+        this.reasonixConfig = reasonixConfig;
     }
 
     /**
@@ -40,6 +49,9 @@ public class ChatController {
         String query = (String) body.get("query");
         String sessionId = (String) body.getOrDefault("sessionId", "default");
         String modelId = (String) body.get("modelId");
+        // 解析 modelId：若传入的是 "supplierId-modelName" 格式（如 stepfun-3.7-flash），
+        // 自动映射为注册表中实际定义的 model id（如 step-3.7-flash）。
+        modelId = ModelResolver.resolve(modelId, modelRegistry, reasonixConfig);
         return agentController.execute(query, sessionId, modelId);
     }
 
@@ -51,6 +63,8 @@ public class ChatController {
         String question = (String) body.get("question");
         String sessionId = (String) body.getOrDefault("sessionId", "default");
         String modelId = (String) body.get("modelId");
+        // 解析 modelId：防止 "supplierId-modelName" 拼接格式导致配置缺失
+        modelId = ModelResolver.resolve(modelId, modelRegistry, reasonixConfig);
         return agentController.execute(question != null ? question : "", sessionId, modelId);
     }
 
@@ -86,12 +100,15 @@ public class ChatController {
                                 @RequestParam(defaultValue = "default") String sessionId,
                                 @RequestParam(defaultValue = "default") String modelId) {
         String query = (String) body.get("query");
+        // 解析 modelId：防止 URL 参数传入拼接格式（如 ?modelId=stepfun-3.7-flash）
+        // 使用局部 final 变量，避免 lambda 捕获非 final 变量编译错误
+        final String resolvedModelId = ModelResolver.resolve(modelId, modelRegistry, reasonixConfig);
 
         SseEmitter emitter = new SseEmitter(300_000L);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {
-                agentController.executeStream(query, sessionId, modelId, event -> {
+                agentController.executeStream(query, sessionId, resolvedModelId, event -> {
                     try {
                         String json = toJson(event);
                         emitter.send(SseEmitter.event()
@@ -112,14 +129,52 @@ public class ChatController {
     }
 
     /**
-     * SSE 事件流接收端点（GET 建立事件通道）。
+     * SSE 流式对话接口（GET 触发执行并通过 SSE 推送中间事件）。
      *
-     * <p>前端浏览器 EventSource 使用 GET 建立连接；当前先返回一个保活通道，
-     * 避免页面刷新时出现 405。后续可以把会话事件推送到该连接。</p>
+     * <p>前端使用 EventSource 建立连接，服务端在连接建立后立即执行 Agent 并逐步推送
+     * THINK / TOOL_CALL / TOOL_RESULT / CHUNK 事件，直至 DONE 或 ERROR。</p>
+     *
+     * @param question   用户问题（query 参数）
+     * @param sessionId  会话ID
+     * @param modelId    模型ID
+     * @return SSE emitter
      */
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter chatStreamGet(@RequestParam(defaultValue = "default") String sessionId) {
-        return new SseEmitter(300_000L);
+    public SseEmitter chatStreamGet(@RequestParam(defaultValue = "default") String sessionId,
+                                    @RequestParam(defaultValue = "") String question,
+                                    @RequestParam(defaultValue = "") String modelId) {
+        SseEmitter emitter = new SseEmitter(300_000L);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
+                agentController.executeStream(
+                        question != null ? question : "",
+                        sessionId,
+                        modelId,
+                        event -> {
+                            try {
+                                String json = toJson(event);
+                                emitter.send(SseEmitter.event().name("message").data(json));
+                            } catch (IOException e) {
+                                emitter.completeWithError(e);
+                            }
+                        }
+                );
+                emitter.complete();
+            } catch (Exception e) {
+                try {
+                    emitter.send(SseEmitter.event()
+                            .name("message")
+                            .data("{\"type\":\"error\",\"content\":\"" + e.getMessage() + "\"}"));
+                } catch (IOException ex) {
+                    emitter.completeWithError(ex);
+                }
+                emitter.complete();
+            } finally {
+                executor.shutdown();
+            }
+        });
+        return emitter;
     }
 
     /**

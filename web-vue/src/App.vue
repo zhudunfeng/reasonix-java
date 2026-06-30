@@ -12,6 +12,7 @@
             <div class="role">{{ item.role }}</div>
 
             <template v-if="item.role === 'assistant'">
+              <!-- 思考过程（可折叠） -->
               <div v-if="item.reasoning && item.reasoningOpen" class="content reasoning">
                 <div class="reasoning-header" @click="toggleReasoning(item)">
                   <span>思考过程</span>
@@ -19,19 +20,23 @@
                 </div>
                 <div class="reasoning-body">{{ item.reasoning }}</div>
               </div>
-              <div v-else-if="item.reasoning && !item.reasoningOpen" class="content reasoning collapsed" @click="toggleReasoning(item)">
+              <div v-else-if="item.reasoning && !item.reasoningOpen"
+                   class="content reasoning collapsed"
+                   @click="toggleReasoning(item)">
                 <div class="reasoning-header">
                   <span>思考过程</span>
                   <span class="caret">▼</span>
                 </div>
               </div>
 
+              <!-- 工具调用 -->
               <div v-if="item.toolCalls && item.toolCalls.length" class="content tool-calls">
                 <div class="tool-call" v-for="tool in item.toolCalls" :key="tool.name">
                   <div class="tool-name">{{ tool.name }}</div>
                   <pre class="tool-args">{{ tool.arguments }}</pre>
                 </div>
               </div>
+              <!-- 工具执行结果 -->
               <div v-if="item.toolResults && item.toolResults.length" class="content tool-results">
                 <div class="tool-result" v-for="(result, idx) in item.toolResults" :key="idx">
                   {{ result }}
@@ -39,10 +44,12 @@
               </div>
             </template>
 
+            <!-- 主回复内容 -->
             <div v-if="item.content" class="content">{{ item.content }}</div>
           </div>
         </div>
 
+        <!-- 加载中占位 -->
         <div v-if="loading" class="message assistant">
           <div class="bubble">
             <div class="role">assistant</div>
@@ -73,6 +80,7 @@
 import { nextTick, onMounted, ref } from 'vue';
 
 const API_BASE = '';
+/** 后端 SSE 端点（GET，通过 EventSource 建立连接） */
 const SSE_URL = `/api/chat/stream`;
 
 type Role = 'user' | 'assistant';
@@ -80,9 +88,13 @@ type Message = {
   id: string;
   role: Role;
   content: string;
+  /** 思考过程文本 */
   reasoning?: string;
+  /** 思考过程是否展开 */
   reasoningOpen?: boolean;
+  /** 工具调用列表 */
   toolCalls?: { name: string; arguments: string }[];
+  /** 工具执行结果列表 */
   toolResults?: string[];
 };
 
@@ -90,8 +102,19 @@ const input = ref('');
 const loading = ref(false);
 const items = ref<Message[]>([]);
 const messagesEl = ref<HTMLDivElement | null>(null);
+/** 当前活跃的 EventSource 连接，用于快速关闭和竞态控制 */
+const currentEventSource = ref<EventSource | null>(null);
 
-async function send() {
+/**
+ * 发送消息。
+ *
+ * 流程：
+ *  1. 将用户输入追加到 items
+ *  2. 建立 EventSource GET /api/chat/stream?question=xxx 连接
+ *  3. 逐事件接收 THINK / CHUNK / TOOL_CALL / TOOL_RESULT / DONE / ERROR
+ *  4. 实时更新最后一条 assistant 消息
+ */
+function send() {
   const text = input.value.trim();
   if (!text || loading.value) return;
 
@@ -99,81 +122,71 @@ async function send() {
   items.value.push({ id: randomId(), role: 'user', content: text });
   input.value = '';
   loading.value = true;
-  await scrollToBottom();
+  scrollToBottom();
 
-  try {
-    const res = await fetch(`${API_BASE}/api/chat/stream`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: text, sessionId }),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`HTTP ${res.status}: ${text}`);
-    }
-
-    const reader = res.body?.getReader();
-    if (!reader) {
-      throw new Error('响应流不可读');
-    }
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split(/\r?\n/);
-      buffer = lines.pop() ?? '';
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || !trimmed.startsWith('data:')) continue;
-        const payload = trimmed.slice(5).trim();
-        if (!payload) continue;
-        try {
-          const data = JSON.parse(payload) as {
-            type?: string;
-            kind?: string;
-            content?: string;
-            errorMessage?: string;
-            reasoning?: string;
-            toolName?: string;
-            arguments?: Record<string, unknown>;
-            toolResult?: string;
-          };
-          if (!data) continue;
-          const kind = String(data.kind ?? data.type ?? '').toLowerCase();
-          if (!kind || kind === 'unknown') continue;
-          const id = ensureAssistantBubble();
-          if (kind === 'error') {
-            appendAssistantText(id, `\n[错误] ${data.errorMessage ?? '未知错误'}`);
-          } else if (kind === 'start') {
-            appendAssistantText(id, '');
-          } else if (kind === 'think') {
-            appendAssistantReasoning(id, data.content ?? '');
-          } else if (kind === 'chunk') {
-            appendAssistantText(id, data.content ?? '');
-            collapseLastReasoning(id);
-          } else if (kind === 'tool_call') {
-            appendAssistantToolCall(id, data.toolName ?? '', data.arguments ?? {});
-          } else if (kind === 'tool_result') {
-            appendAssistantToolResult(id, data.toolResult ?? data.content ?? '');
-          } else if (kind === 'done' || kind === 'token') {
-            appendAssistantText(id, data.content ?? '');
-            collapseLastReasoning(id);
-          }
-          await scrollToBottom();
-        } catch {
-          // ignore parse errors
-        }
-      }
-    }
-  } catch (e) {
-    items.value.push({ id: randomId(), role: 'assistant', content: `请求失败：${(e as Error).message}` });
-  } finally {
-    loading.value = false;
-    await scrollToBottom();
+  // 关闭上一次未完成的 EventSource（防止快速连发时的竞态）
+  if (currentEventSource.value) {
+    currentEventSource.value.close();
   }
+
+  const es = new EventSource(
+    `${SSE_URL}?question=${encodeURIComponent(text)}&sessionId=${encodeURIComponent(sessionId)}`
+  );
+  currentEventSource.value = es;
+
+  es.addEventListener('message', (rawEvent: MessageEvent) => {
+    try {
+      const data = JSON.parse(rawEvent.data) as {
+        type?: string;
+        content?: string;
+        errorMessage?: string;
+        toolName?: string;
+        arguments?: Record<string, unknown>;
+        toolResult?: string;
+      };
+      if (!data) return;
+      const kind = String(data.type ?? '').toLowerCase();
+      if (!kind) return;
+
+      const id = ensureAssistantBubble();
+
+      if (kind === 'error') {
+        appendAssistantText(id, `\n[错误] ${data.errorMessage ?? '未知错误'}`);
+      } else if (kind === 'start') {
+        // 仅占位，不渲染内容
+      } else if (kind === 'think') {
+        appendAssistantReasoning(id, data.content ?? '');
+      } else if (kind === 'chunk') {
+        appendAssistantText(id, data.content ?? '');
+        collapseLastReasoning(id);
+      } else if (kind === 'tool_call') {
+        appendAssistantToolCall(id, data.toolName ?? '', data.arguments ?? {});
+      } else if (kind === 'tool_result') {
+        appendAssistantToolResult(id, data.toolResult ?? data.content ?? '');
+      } else if (kind === 'done') {
+        appendAssistantText(id, data.content ?? '');
+        collapseLastReasoning(id);
+        es.close();
+        loading.value = false;
+      }
+      scrollToBottom();
+    } catch {
+      // 忽略解析错误
+    }
+  });
+
+  es.onerror = () => {
+    es.close();
+    if (loading.value) {
+      // 连接错误但尚未完成时，不做额外操作（后端 ERROR 事件会处理错误内容）
+    }
+  };
+
+  // 兜底：若后端没有返回 DONE 而连接关闭，取消 loading
+  es.addEventListener('close', () => {
+    loading.value = false;
+    currentEventSource.value = null;
+  });
 }
 
 function sessionIdValue(): string {
@@ -189,6 +202,10 @@ function randomId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/**
+ * 确保 items 最后一条是 assistant 消息，返回其 id。
+ * 若是连续 assistant 消息则复用，否则追加新消息。
+ */
 function ensureAssistantBubble(): string {
   const last = items.value[items.value.length - 1];
   if (last && last.role === 'assistant') return last.id;
