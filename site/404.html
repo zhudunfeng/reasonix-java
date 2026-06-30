@@ -1,0 +1,231 @@
+<!-- 复刻来源：E:\ideaprojects2022\reasonix-go\site\src\pages\404.astro -->
+<!-- 说明：将 Astro 404 页静态等价输出为单文件 HTML，保留中文说明与返回首页引导。 -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Page not found — Reasonix</title>
+  <meta name="description" content="The page you are looking for does not exist." />
+  <link rel="canonical" href="https://reasonix.io/" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="sitemap" href="/sitemap-index.xml" />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Reasonix" />
+  <meta property="og:title" content="Page not found — Reasonix" />
+  <meta property="og:description" content="The page you are looking for does not exist." />
+  <meta property="og:url" content="https://reasonix.io/" />
+  <meta property="og:image" content="https://reasonix.io/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Reasonix — page not found" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="zh_CN" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Page not found — Reasonix" />
+  <meta name="twitter:description" content="The page you are looking for does not exist." />
+  <meta name="twitter:image" content="https://reasonix.io/og.png" />
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --acc-1: #4f9dff;
+  --acc-2: #7a6bff;
+  --acc-3: #c46bff;
+  --accent: oklch(0.55 0.17 257);
+  --accent-deep: oklch(0.48 0.17 257);
+  --accent-soft: color-mix(in oklch, var(--accent) 8%, white);
+  --bg: #ffffff;
+  --bg-soft: oklch(0.976 0.0025 247);
+  --ink: oklch(0.25 0.006 260);
+  --ink-2: oklch(0.47 0.008 260);
+  --ink-3: oklch(0.6 0.008 260);
+  --line: oklch(0.925 0.004 247);
+  --card: #ffffff;
+  --term-bg: oklch(0.25 0.006 260);
+  --term-edge: oklch(0.35 0.008 260);
+  --radius: 24px;
+  --radius-sm: 12px;
+  --shadow-1: 0 1px 2px oklch(0.35 0.01 260 / 0.18), 0 1px 3px 1px oklch(0.35 0.01 260 / 0.08);
+  --shadow-2: 0 1px 3px oklch(0.35 0.01 260 / 0.15), 0 8px 24px -4px oklch(0.35 0.01 260 / 0.16);
+  --font-sans: "Outfit", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection { background: oklch(0.88 0.05 257); }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 40px; }
+
+body[data-lang="en"] .l-zh { display: none !important; }
+body[data-lang="zh"] .l-en { display: none !important; }
+body[data-lang="zh"] h1,
+body[data-lang="zh"] h2,
+body[data-lang="zh"] h3 { letter-spacing: 0; }
+body[data-lang="zh"] .hero h1 { font-size: clamp(42px, 5.6vw, 72px); line-height: 1.22; }
+
+.lang-switch { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-soft); border-radius: 999px; }
+.lang-switch button {
+  font-family: var(--font-sans); font-size: 12.5px; font-weight: 500;
+  color: var(--ink-2); background: transparent; border: none; cursor: pointer;
+  padding: 6px 13px; border-radius: 999px;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.lang-switch button:hover { color: var(--ink); }
+.lang-switch button.active { background: #fff; color: var(--accent); box-shadow: var(--shadow-1); }
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+.nav.scrolled {
+  background: oklch(1 0 0 / 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 1px 0 var(--line);
+}
+.nav-inner {
+  display: flex; align-items: center; gap: 24px;
+  height: 68px; max-width: 1180px; margin: 0 auto; padding: 0 40px;
+}
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+.brand img { width: 28px; height: 28px; border-radius: 8px; display: block; }
+.brand span { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.nav-links { display: flex; gap: 6px; margin-right: auto; margin-left: 18px; }
+.nav-links a {
+  color: var(--ink-2); text-decoration: none; font-size: 14.5px; font-weight: 500;
+  padding: 8px 14px; border-radius: 999px;
+  transition: color 0.2s, background 0.2s;
+}
+.nav-links a:hover { color: var(--ink); background: var(--bg-soft); }
+.nav-links a.here { color: var(--accent); background: var(--accent-soft); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-sans); font-size: 15px; font-weight: 500;
+  padding: 12px 26px; border-radius: 999px; text-decoration: none; cursor: pointer;
+  border: none; transition: background 0.2s, box-shadow 0.25s, color 0.2s, border-color 0.2s;
+}
+.btn-dark { background: var(--accent); color: #fff; }
+.btn-dark:hover { background: var(--accent-deep); box-shadow: var(--shadow-1); }
+.btn-ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+.btn-ghost:hover { background: var(--accent-soft); border-color: transparent; }
+.nav .btn { padding: 9px 20px; font-size: 14px; }
+
+.hero { position: relative; padding: 150px 0 0; text-align: center; }
+
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: 13px; font-weight: 600;
+  color: var(--accent); margin-bottom: 26px; letter-spacing: 0.01em;
+}
+.eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: oklch(0.7 0.16 150); box-shadow: 0 0 0 3px oklch(0.7 0.16 150 / 0.18); }
+
+.hero h1 {
+  max-width: 14em; margin: 0 auto;
+  font-size: clamp(48px, 6.6vw, 92px);
+  line-height: 1.04; letter-spacing: -0.025em; font-weight: 600;
+  text-wrap: balance;
+}
+.hero h1 .grad { color: var(--accent); }
+.hero h1 em { font-style: italic; color: var(--accent); }
+.hero .sub {
+  margin: 28px auto 0; max-width: 620px;
+  font-size: 19px; line-height: 1.6; color: var(--ink-2); font-weight: 400;
+  text-wrap: pretty;
+}
+.hero .sub b { color: var(--ink); font-weight: 600; }
+
+.hero-cta { margin-top: 40px; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+
+.install {
+  display: inline-flex; align-items: center; gap: 14px;
+  font-family: var(--font-mono); font-size: 14px; color: var(--ink);
+  background: var(--bg-soft); border-radius: 999px;
+  padding: 12px 10px 12px 22px;
+}
+.install .ps1 { color: var(--accent); user-select: none; }
+.install button {
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+  background: #fff; color: var(--accent); border: none; cursor: pointer;
+  padding: 7px 16px; border-radius: 999px; box-shadow: var(--shadow-1);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.install button:hover { box-shadow: var(--shadow-2); }
+.install button.copied { background: oklch(0.55 0.14 155); color: #fff; }
+
+@media (max-width: 900px) {
+  .wrap { padding: 0 24px; }
+  .nav-links { display: none; }
+  .lang-switch { margin-left: auto; }
+  .hero { padding-top: 130px; }
+}
+  </style>
+</head>
+<body data-motion="rich" data-lang="en" data-title-en="Page not found — Reasonix" data-title-zh="页面不存在 — Reasonix">
+  <!-- 中文说明：404 页面顶部导航，保持站点一致入口。 -->
+  <header class="nav scrolled">
+    <div class="nav-inner">
+      <a class="brand" href="/"><img src="/logo.svg" alt="Reasonix logo" /><span>Reasonix</span></a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-lang="en" class="active">EN</button>
+        <button type="button" data-lang="zh">中文</button>
+      </div>
+      <a class="btn btn-dark" href="/#start"><span class="l-en">Install</span><span class="l-zh">安装</span></a>
+    </div>
+  </header>
+
+  <main class="hero" style="padding-bottom:150px">
+    <div class="wrap">
+      <div class="eyebrow">404</div>
+      <h1><span class="l-en">This page went <span class="grad">cold.</span></span><span class="l-zh">这一页<span class="grad">冷掉了</span>。</span></h1>
+      <p class="sub"><span class="l-en">The page you're looking for doesn't exist — but the session is still warm.</span><span class="l-zh">你找的页面不存在——但会话还热着。</span></p>
+      <div class="hero-cta">
+        <a class="btn btn-dark" href="/"><span class="l-en">Back to home</span><span class="l-zh">回到首页</span></a>
+        <a class="btn btn-ghost" href="/docs.html"><span class="l-en">Read the docs</span><span class="l-zh">查看文档</span></a>
+      </div>
+    </div>
+  </main>
+
+  <!-- 中文说明：404 页脚本，负责导航状态与语言切换。 -->
+  <script>
+(function () {
+  const nav = document.querySelector(".nav");
+  if (nav) {
+    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 12);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
+
+  const LANG_KEY = "reasonix-lang";
+  const langBtns = Array.from(document.querySelectorAll(".lang-switch button"));
+  const setLang = (l) => {
+    document.body.dataset.lang = l;
+    document.documentElement.lang = l === "zh" ? "zh-CN" : "en";
+    const t = document.body.dataset[l === "zh" ? "titleZh" : "titleEn"];
+    if (t) document.title = t;
+    langBtns.forEach((b) => b.classList.toggle("active", b.dataset.lang === l));
+    try { localStorage.setItem(LANG_KEY, l); } catch (e) {}
+  };
+  langBtns.forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
+  let savedLang = "";
+  try { savedLang = localStorage.getItem(LANG_KEY) || ""; } catch (e) {}
+  setLang(savedLang || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en"));
+})();
+  </script>
+</body>
+</html>

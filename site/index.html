@@ -1,0 +1,1295 @@
+<!-- 复刻来源：E:\ideaprojects2022\reasonix-go\site\src\pages\index.astro -->
+<!-- 说明：将 Astro 首页静态等价输出为单文件 HTML，保留中文说明与交互。 -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reasonix — DeepSeek-native coding agent for your terminal</title>
+  <meta name="description" content="Open-source AI coding agent for your terminal and browser, engineered around DeepSeek's byte-stable prefix cache. Long sessions hold 90%+ cache hit and input-token cost collapses to ~1/5. A single Go binary. npm · Homebrew · desktop · web UI. MIT." />
+  <link rel="canonical" href="https://reasonix.io/" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="sitemap" href="/sitemap-index.xml" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Reasonix" />
+  <meta property="og:title" content="Reasonix — DeepSeek-native coding agent for your terminal" />
+  <meta property="og:description" content="Open-source AI coding agent for your terminal and browser, engineered around DeepSeek's byte-stable prefix cache. Long sessions hold 90%+ cache hit and input-token cost collapses to ~1/5. A single Go binary. npm · Homebrew · desktop · web UI. MIT." />
+  <meta property="og:url" content="https://reasonix.io/" />
+  <meta property="og:image" content="https://reasonix.io/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Reasonix — a DeepSeek-native coding agent for your terminal" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="zh_CN" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Reasonix — DeepSeek-native coding agent for your terminal" />
+  <meta name="twitter:description" content="Open-source AI coding agent for your terminal and browser, engineered around DeepSeek's byte-stable prefix cache. Long sessions hold 90%+ cache hit and input-token cost collapses to ~1/5. A single Go binary. npm · Homebrew · desktop · web UI. MIT." />
+  <meta name="twitter:image" content="https://reasonix.io/og.png" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Reasonix",
+    "description": "Open-source AI coding agent for your terminal and browser, engineered around DeepSeek's byte-stable prefix cache. Long sessions hold 90%+ cache hit and input-token cost collapses to ~1/5. A single Go binary. npm · Homebrew · desktop · web UI. MIT.",
+    "url": "https://reasonix.io/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS, Windows, Linux",
+    "softwareVersion": "1.1.0",
+    "license": "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE",
+    "downloadUrl": "https://github.com/esengine/DeepSeek-Reasonix/releases",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <style>
+/* Reasonix marketing site — Google-style visual language:
+   pure white, one blue accent, soft-gray surfaces, large radii, pill buttons. */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --acc-1: #4f9dff;
+  --acc-2: #7a6bff;
+  --acc-3: #c46bff;
+  --accent: oklch(0.55 0.17 257);
+  --accent-deep: oklch(0.48 0.17 257);
+  --accent-soft: color-mix(in oklch, var(--accent) 8%, white);
+  --bg: #ffffff;
+  --bg-soft: oklch(0.976 0.0025 247);
+  --ink: oklch(0.25 0.006 260);
+  --ink-2: oklch(0.47 0.008 260);
+  --ink-3: oklch(0.6 0.008 260);
+  --line: oklch(0.925 0.004 247);
+  --card: #ffffff;
+  --term-bg: oklch(0.25 0.006 260);
+  --term-edge: oklch(0.35 0.008 260);
+  --radius: 24px;
+  --radius-sm: 12px;
+  --shadow-1: 0 1px 2px oklch(0.35 0.01 260 / 0.18), 0 1px 3px 1px oklch(0.35 0.01 260 / 0.08);
+  --shadow-2: 0 1px 3px oklch(0.35 0.01 260 / 0.15), 0 8px 24px -4px oklch(0.35 0.01 260 / 0.16);
+  --font-sans: "Outfit", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection { background: oklch(0.88 0.05 257); }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 40px; }
+
+/* language switching */
+body[data-lang="en"] .l-zh { display: none !important; }
+body[data-lang="zh"] .l-en { display: none !important; }
+body[data-lang="zh"] h1,
+body[data-lang="zh"] h2,
+body[data-lang="zh"] h3 { letter-spacing: 0; }
+body[data-lang="zh"] .hero h1 { font-size: clamp(42px, 5.6vw, 72px); line-height: 1.22; }
+
+.lang-switch { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-soft); border-radius: 999px; }
+.lang-switch button {
+  font-family: var(--font-sans); font-size: 12.5px; font-weight: 500;
+  color: var(--ink-2); background: transparent; border: none; cursor: pointer;
+  padding: 6px 13px; border-radius: 999px;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.lang-switch button:hover { color: var(--ink); }
+.lang-switch button.active { background: #fff; color: var(--accent); box-shadow: var(--shadow-1); }
+
+/* nav */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+.nav.scrolled {
+  background: oklch(1 0 0 / 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 1px 0 var(--line);
+}
+.nav-inner {
+  display: flex; align-items: center; gap: 24px;
+  height: 68px; max-width: 1180px; margin: 0 auto; padding: 0 40px;
+}
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+.brand img { width: 28px; height: 28px; border-radius: 8px; display: block; }
+.brand span { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.nav-links { display: flex; gap: 6px; margin-right: auto; margin-left: 18px; }
+.nav-links a {
+  color: var(--ink-2); text-decoration: none; font-size: 14.5px; font-weight: 500;
+  padding: 8px 14px; border-radius: 999px;
+  transition: color 0.2s, background 0.2s;
+}
+.nav-links a:hover { color: var(--ink); background: var(--bg-soft); }
+.nav-links a.here { color: var(--accent); background: var(--accent-soft); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-sans); font-size: 15px; font-weight: 500;
+  padding: 12px 26px; border-radius: 999px; text-decoration: none; cursor: pointer;
+  border: none; transition: background 0.2s, box-shadow 0.25s, color 0.2s, border-color 0.2s;
+}
+.btn-dark { background: var(--accent); color: #fff; }
+.btn-dark:hover { background: var(--accent-deep); box-shadow: var(--shadow-1); }
+.btn-ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+.btn-ghost:hover { background: var(--accent-soft); border-color: transparent; }
+.nav .btn { padding: 9px 20px; font-size: 14px; }
+
+/* hero */
+.hero { position: relative; padding: 150px 0 0; text-align: center; }
+.hero-dots { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: 13px; font-weight: 600;
+  color: var(--accent); margin-bottom: 26px; letter-spacing: 0.01em;
+}
+.eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: oklch(0.7 0.16 150); box-shadow: 0 0 0 3px oklch(0.7 0.16 150 / 0.18); }
+
+.hero h1 {
+  max-width: 14em; margin: 0 auto;
+  font-size: clamp(48px, 6.6vw, 92px);
+  line-height: 1.04; letter-spacing: -0.025em; font-weight: 600;
+  text-wrap: balance;
+}
+.hero h1 .grad { color: var(--accent); }
+.hero h1 em { font-style: italic; color: var(--accent); }
+.hero .sub {
+  margin: 28px auto 0; max-width: 620px;
+  font-size: 19px; line-height: 1.6; color: var(--ink-2); font-weight: 400;
+  text-wrap: pretty;
+}
+.hero .sub b { color: var(--ink); font-weight: 600; }
+
+.hero-cta { margin-top: 40px; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+
+.install {
+  display: inline-flex; align-items: center; gap: 14px;
+  font-family: var(--font-mono); font-size: 14px; color: var(--ink);
+  background: var(--bg-soft); border-radius: 999px;
+  padding: 12px 10px 12px 22px;
+}
+.install .ps1 { color: var(--accent); user-select: none; }
+.install button {
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+  background: #fff; color: var(--accent); border: none; cursor: pointer;
+  padding: 7px 16px; border-radius: 999px; box-shadow: var(--shadow-1);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.install button:hover { box-shadow: var(--shadow-2); }
+.install button.copied { background: oklch(0.55 0.14 155); color: #fff; }
+
+.also { margin-top: 22px; font-size: 14px; color: var(--ink-3); }
+.also a { color: var(--accent); text-decoration: none; font-weight: 500; }
+.also a:hover { text-decoration: underline; }
+
+/* terminal */
+.term-stage { position: relative; margin: 64px auto 0; max-width: 880px; perspective: 1200px; }
+.fig {
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink-3);
+  margin-bottom: 14px; text-align: left;
+}
+.term {
+  position: relative; text-align: left;
+  background: var(--term-bg);
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow-2);
+  will-change: transform;
+}
+.term-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 20px; border-bottom: 1px solid var(--term-edge);
+}
+.term-bar i { width: 10px; height: 10px; border-radius: 50%; background: oklch(0.42 0.008 260); }
+.term-bar .title {
+  margin: 0 auto; transform: translateX(-20px);
+  font-family: var(--font-mono); font-size: 12px; color: oklch(0.62 0.008 260);
+}
+.term-body {
+  padding: 26px 30px 28px; min-height: 312px;
+  font-family: var(--font-mono); font-size: 13.5px; line-height: 2.05;
+  color: oklch(0.9 0.004 260); white-space: pre-wrap;
+}
+.term-body .tl { display: block; opacity: 0; transform: translateY(4px); }
+.term-body .tl.on { opacity: 1; transform: none; transition: opacity 0.4s, transform 0.4s var(--ease); }
+.t-dim { color: oklch(0.6 0.008 260); }
+.t-acc { color: var(--acc-1); }
+.t-vio { color: var(--acc-2); }
+.t-ok  { color: oklch(0.78 0.13 160); }
+.t-warm{ color: oklch(0.82 0.11 80); }
+.t-add { color: oklch(0.78 0.13 160); }
+.caret {
+  display: inline-block; width: 8px; height: 16px; vertical-align: -3px;
+  background: var(--acc-1); animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.term-stat {
+  display: flex; gap: 26px; justify-content: space-between; flex-wrap: wrap;
+  border-top: 1px solid var(--term-edge); padding: 14px 30px;
+  font-family: var(--font-mono); font-size: 12px; color: oklch(0.6 0.008 260);
+}
+.term-stat b { color: oklch(0.86 0.02 260); font-weight: 500; }
+
+/* sections */
+section { padding: 150px 0 0; }
+.sec-head { max-width: 680px; margin: 0 auto 64px; text-align: center; }
+.sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+.kicker {
+  font-size: 14.5px; font-weight: 600; letter-spacing: 0.01em;
+  color: var(--accent); display: block; margin-bottom: 18px;
+}
+.sec-head h2 {
+  font-size: clamp(32px, 3.8vw, 48px); line-height: 1.12;
+  letter-spacing: -0.02em; font-weight: 600; text-wrap: balance;
+}
+.sec-head h2 .em { color: var(--accent); }
+.sec-head p { margin-top: 18px; font-size: 17px; line-height: 1.65; color: var(--ink-2); text-wrap: pretty; }
+
+.sec-head.split {
+  max-width: none; margin: 0 0 56px; text-align: left;
+  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 20px 90px; align-items: end;
+}
+.sec-head.split .kicker { grid-column: 1 / -1; margin-bottom: 4px; }
+.sec-head.split h2 { margin: 0; }
+.sec-head.split p { margin: 0 0 6px; }
+
+/* features — bento grid (six cards) */
+.feat-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; }
+.feat { grid-column: span 6; }
+.feat:nth-child(1) { grid-column: span 7; }
+.feat:nth-child(2) { grid-column: span 5; }
+.feat:nth-child(3) { grid-column: span 5; }
+.feat:nth-child(4) { grid-column: span 7; }
+.feat:nth-child(5) { grid-column: span 6; }
+.feat:nth-child(6) { grid-column: span 6; }
+.feat-viz { display: flex; gap: 6px; margin-top: 30px; }
+.feat-viz i {
+  width: 20px; height: 20px; border-radius: 6px;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent) 26%, transparent);
+}
+.feat-viz i.n { background: var(--accent); box-shadow: none; }
+.feat-chip {
+  display: inline-block; margin-top: 30px;
+  font-family: var(--font-mono); font-size: 12.5px;
+  background: #fff; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line);
+  padding: 9px 16px; color: var(--ink-2);
+}
+.feat {
+  position: relative; overflow: hidden;
+  background: var(--bg-soft); border-radius: var(--radius);
+  padding: 38px 38px 40px;
+  transition: box-shadow 0.3s, transform 0.3s var(--ease);
+}
+.feat:hover { box-shadow: var(--shadow-2); transform: translateY(-3px); }
+.feat .tag {
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-3);
+  letter-spacing: 0.05em; display: block; margin-bottom: 20px; text-transform: uppercase;
+}
+.feat:hover .tag { color: var(--accent); }
+.feat h3 { font-size: 22px; letter-spacing: -0.01em; font-weight: 600; margin-bottom: 12px; }
+.feat p { font-size: 15.5px; line-height: 1.68; color: var(--ink-2); text-wrap: pretty; }
+.feat code { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); }
+
+/* cache diagram */
+.cache-panel {
+  background: var(--bg-soft); border-radius: var(--radius);
+  padding: 56px 60px 50px; overflow: hidden;
+}
+.cache-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.cache-row .lbl {
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink-3);
+  width: 104px; flex: none;
+  transition: color 0.35s;
+}
+.cache-row.row-on .lbl { color: var(--ink); }
+.blk {
+  width: 34px; height: 34px; border-radius: 9px; flex: none;
+  background: #fff; box-shadow: inset 0 0 0 1px var(--line);
+  opacity: 0; transform: scale(0.7);
+  transition: opacity 0.45s var(--ease), transform 0.45s var(--ease);
+  transition-delay: calc(var(--i, 0) * 55ms);
+}
+.cache-row.row-on .blk { opacity: 1; transform: none; }
+.blk.hit {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent) 30%, transparent);
+}
+.blk.new { background: var(--accent); box-shadow: none; }
+.cache-legend {
+  display: flex; gap: 28px; margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--line);
+  font-size: 13.5px; color: var(--ink-2); flex-wrap: wrap;
+}
+.cache-legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; vertical-align: -2px; margin-right: 9px; }
+
+.cache-grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 52px; align-items: center; }
+.cache-steps { display: flex; flex-direction: column; gap: 8px; }
+.cap {
+  text-align: left; font-size: 14.5px; font-weight: 500; color: var(--ink-3);
+  padding: 13px 18px; border-radius: var(--radius-sm);
+  transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+}
+.cap .n { font-family: var(--font-mono); font-size: 12px; margin-right: 12px; color: var(--ink-3); }
+.cap.on { background: #fff; color: var(--ink); box-shadow: var(--shadow-1); }
+.cap.on .n { color: var(--accent); }
+
+.how-track { height: 280vh; }
+.how-stage { position: sticky; top: 0; min-height: 100vh; display: flex; align-items: center; width: 100%; }
+.how-stage > .wrap { width: 100%; }
+.how-stage .sec-head { margin-bottom: 44px; }
+body.how-flat .how-track { height: auto; }
+body.how-flat .how-stage { position: static; min-height: 0; display: block; }
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+.step { padding: 6px 40px 6px 0; }
+.step + .step { padding-left: 40px; border-left: 1px solid var(--line); }
+.step .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--accent-soft);
+  font-size: 14px; font-weight: 600; color: var(--accent);
+  margin-bottom: 20px;
+}
+.step h3 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 10px; }
+.step p { font-size: 15px; line-height: 1.62; color: var(--ink-2); }
+.step code {
+  display: inline-block; margin-top: 18px; font-family: var(--font-mono); font-size: 13px;
+  background: var(--bg-soft); border-radius: 999px;
+  padding: 9px 16px; color: var(--ink);
+}
+
+/* contributors marquee */
+.crew {
+  margin-top: 8px; display: grid; gap: 18px; overflow: hidden; padding: 24px 0 10px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.crew-row { display: flex; width: max-content; }
+.crew-set { display: flex; align-items: center; gap: 16px; padding-right: 16px; }
+@media (prefers-reduced-motion: no-preference) {
+  body[data-motion="rich"] .crew-row { animation: crew-slide 60s linear infinite; }
+  body[data-motion="rich"] .crew-row.rev { animation-duration: 70s; animation-direction: reverse; }
+}
+@keyframes crew-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.crew-cta { margin-top: 32px; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.crew-note { margin-top: 18px; font-size: 14px; color: var(--ink-3); }
+.crew-note a { color: var(--accent); text-decoration: none; font-weight: 500; }
+.crew-note a:hover { text-decoration: underline; }
+
+/* divider */
+.divider { padding: 0; }
+.divider .line { display: block; height: 1px; background: var(--line); }
+
+/* cta + install */
+.cta { text-align: center; }
+.cta h2 { font-size: clamp(34px, 4.4vw, 58px); letter-spacing: -0.025em; font-weight: 600; }
+.cta p { margin: 20px auto 0; max-width: 560px; font-size: 17px; line-height: 1.65; color: var(--ink-2); }
+.cta .install { background: #fff; box-shadow: var(--shadow-1); }
+.cta .install button { background: var(--accent-soft); box-shadow: none; }
+.cta .install button:hover { background: color-mix(in oklch, var(--accent) 14%, white); }
+.cta .install button.copied { background: oklch(0.55 0.14 155); color: #fff; }
+
+/* download tabs */
+.dl { margin-top: 44px; }
+.dl-tabs {
+  display: inline-flex; gap: 2px; padding: 4px;
+  background: oklch(0.94 0.004 247); border-radius: 999px;
+}
+.dl-tab {
+  font-family: var(--font-sans); font-size: 14px; font-weight: 500;
+  color: var(--ink-2); background: transparent; border: none; cursor: pointer;
+  padding: 9px 22px; border-radius: 999px;
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+}
+.dl-tab:hover { color: var(--ink); }
+.dl-tab.active { background: #fff; color: var(--accent); box-shadow: var(--shadow-1); }
+
+.dl-pane { display: none; margin-top: 36px; }
+.dl-pane.active { display: block; animation: pane-in 0.45s var(--ease); }
+@keyframes pane-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.dl-note { margin-top: 22px; font-size: 13px; color: var(--ink-3); }
+.dl-note .mono { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
+.dl-note a { color: var(--accent); text-decoration: none; }
+.dl-note a:hover { text-decoration: underline; }
+
+/* npm release channels */
+.chan {
+  max-width: 660px; margin: 26px auto 0; text-align: left;
+  background: #fff; border-radius: var(--radius-sm); box-shadow: var(--shadow-1); overflow: hidden;
+}
+.chan-row {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 16px 22px; font-size: 13.5px;
+  color: var(--ink-3);
+}
+.chan-row + .chan-row { border-top: 1px solid var(--line); }
+.chan-row code { font-family: var(--font-mono); font-size: 13px; color: var(--ink); width: 185px; flex: none; }
+.chan-row .v { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-2); width: 92px; flex: none; }
+.chan-row .s { flex: 1; min-width: 200px; }
+.chan-row.rec { background: var(--accent-soft); }
+.chan-row.rec code { color: var(--accent); font-weight: 500; }
+.chan-row.rec .s { color: var(--ink-2); }
+.chan-badge {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+  color: #fff; background: var(--accent);
+  padding: 4px 11px; border-radius: 999px; flex: none;
+}
+.chan-badge.pre { color: var(--ink-3); background: var(--bg-soft); box-shadow: inset 0 0 0 1px var(--line); }
+.chan-row:not(.rec) code, .chan-row:not(.rec) .v { text-decoration: line-through; text-decoration-color: var(--ink-3); }
+
+.os-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+  max-width: 900px; margin: 0 auto; text-align: left;
+}
+.os-card {
+  position: relative; display: flex; flex-direction: column; gap: 10px;
+  background: #fff; border-radius: var(--radius);
+  padding: 30px 28px 28px; box-shadow: var(--shadow-1);
+  transition: box-shadow 0.3s, transform 0.3s var(--ease);
+}
+.os-card:hover { box-shadow: var(--shadow-2); transform: translateY(-3px); }
+.os-card h4 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+.os-card .meta { font-family: var(--font-mono); font-size: 11.5px; line-height: 1.7; color: var(--ink-3); }
+.os-card .btn { margin-top: 16px; }
+.os-options {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 4px;
+}
+.os-options a {
+  display: inline-flex; align-items: center; min-height: 28px;
+  padding: 5px 9px; border-radius: 7px;
+  background: var(--bg-soft); border: 1px solid var(--line);
+  color: var(--ink-2); text-decoration: none;
+  font-size: 12px; font-weight: 600; line-height: 1.2;
+}
+.os-options a:hover {
+  border-color: color-mix(in oklch, var(--accent) 40%, var(--line));
+  color: var(--accent); text-decoration: none;
+}
+.os-card .alt {
+  font-size: 12.5px; color: var(--ink-3); text-align: center; margin-top: 2px;
+}
+.os-card .alt a { color: var(--accent); text-decoration: none; font-weight: 500; }
+.os-card .alt a:hover { text-decoration: underline; }
+.btn-light { background: var(--accent-soft); color: var(--accent); }
+.btn-light:hover { background: color-mix(in oklch, var(--accent) 14%, white); }
+.dl-help {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px 12px; align-items: center;
+  max-width: 900px; margin: 18px auto 0; padding: 16px 18px;
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-1); text-align: left;
+  color: var(--ink-2); font-size: 13.5px; line-height: 1.5;
+}
+.dl-help strong { grid-column: 1 / -1; color: var(--ink); font-size: 14.5px; }
+.dl-help code {
+  grid-column: 1 / 2; min-width: 0; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 12.5px;
+  background: var(--bg-soft); border-radius: 8px; padding: 8px 10px;
+  color: var(--ink); white-space: nowrap;
+}
+.dl-help button {
+  font-family: var(--font-sans); font-size: 12.5px; font-weight: 600;
+  color: var(--accent); background: var(--accent-soft);
+  border: none; border-radius: 999px; padding: 7px 13px; cursor: pointer;
+}
+.dl-help button.copied { background: oklch(0.55 0.14 155); color: #fff; }
+.dl-help a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.dl-help a:hover { text-decoration: underline; }
+.os-card.detected { box-shadow: 0 0 0 2px var(--accent), var(--shadow-1); }
+@keyframes cardFlash {
+  0%, 100% { box-shadow: 0 0 0 2px var(--accent), var(--shadow-1); }
+  25%, 65% { box-shadow: 0 0 0 3px var(--accent), 0 18px 44px -18px color-mix(in oklch, var(--accent) 55%, transparent); transform: translateY(-3px); }
+}
+.os-card.flash { animation: cardFlash 2s var(--ease); }
+.os-chip {
+  position: absolute; top: -12px; right: 18px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em;
+  color: #fff; background: var(--accent);
+  padding: 4px 13px; border-radius: 999px;
+}
+
+/* footer */
+footer { background: var(--bg); border-top: 1px solid var(--line); margin-top: 0; }
+.foot-inner {
+  max-width: 1180px; margin: 0 auto; padding: 36px 40px 28px;
+  display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+  font-size: 14px; color: var(--ink-3);
+}
+.foot-sub {
+  max-width: 1180px; margin: 0 auto; padding: 16px 40px 26px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  font-size: 13px; color: var(--ink-3);
+}
+.foot-sub .ver { font-family: var(--font-mono); font-size: 12px; }
+.foot-inner .brand img { width: 22px; height: 22px; border-radius: 6px; }
+.foot-inner .brand span { font-size: 15px; }
+.foot-links { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.foot-links a {
+  color: var(--ink-2); text-decoration: none; font-weight: 500;
+  padding: 7px 13px; border-radius: 999px;
+  transition: color 0.2s, background 0.2s;
+}
+.foot-links a:hover { color: var(--ink); background: var(--bg-soft); }
+
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+.reveal.in { opacity: 1; transform: none; }
+
+@media (max-width: 900px) {
+  .wrap { padding: 0 24px; }
+  .nav-links { display: none; }
+  .lang-switch { margin-left: auto; }
+  .dl-tab { padding: 9px 14px; font-size: 13px; }
+  .dl-help { grid-template-columns: 1fr; }
+  .dl-help code { grid-column: auto; white-space: normal; overflow-wrap: anywhere; }
+  .dl-help button { justify-self: start; }
+  .cache-panel { padding: 36px 24px; }
+  .hero { padding-top: 130px; }
+  section { padding-top: 100px; }
+}
+  </style>
+</head>
+<body data-motion="rich" data-lang="en" data-title-en="Reasonix — DeepSeek-native coding agent for your terminal" data-title-zh="Reasonix — DeepSeek 原生的终端编码 Agent">
+  <div class="cursor-glow"></div>
+  <!-- 中文说明：首页顶部导航，含品牌、语言切换与安装入口。 -->
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/"><img src="/logo.svg" alt="Reasonix logo" /><span>Reasonix</span></a>
+      <nav class="nav-links">
+        <a href="#features"><span class="l-en">Features</span><span class="l-zh">特性</span></a>
+        <a href="#how"><span class="l-en">How it works</span><span class="l-zh">工作原理</span></a>
+        <a href="#community"><span class="l-en">Community</span><span class="l-zh">社区</span></a>
+        <a href="/docs.html"><span class="l-en">Docs</span><span class="l-zh">文档</span></a>
+        <a href="#start"><span class="l-en">Get started</span><span class="l-zh">快速开始</span></a>
+      </nav>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-lang="en" class="active">EN</button>
+        <button type="button" data-lang="zh">中文</button>
+      </div>
+      <a class="btn btn-dark" href="#start"><span class="l-en">Install</span><span class="l-zh">安装</span></a>
+    </div>
+  </header>
+
+  <main>
+    <!-- 中文说明：首屏 Hero 区域，展示核心卖点与终端演示。 -->
+    <section class="hero">
+      <canvas class="hero-dots"></canvas>
+      <div class="wrap">
+        <div class="eyebrow reveal"><span class="dot"></span><span class="l-en">DeepSeek-native · built for your terminal · MIT</span><span class="l-zh">DeepSeek 原生 · 为终端而生 · MIT</span></div>
+        <h1 class="reveal" style="--d:0.06s">
+          <span class="l-en">A <span class="grad">DeepSeek</span>-native agent<br />for your terminal.</span>
+          <span class="l-zh"><span class="grad">DeepSeek</span> 原生的<br />终端编码 Agent。</span>
+        </h1>
+        <p class="sub reveal" style="--d:0.12s">
+          <span class="l-en">The loop is append-only, aligned to DeepSeek's byte-stable prefix cache — so long sessions hold <b>90%+ cache hit</b> and input-token cost collapses to <b>~1/5</b>. Terminal-first, with a local browser UI when you want one.</span>
+          <span class="l-zh">运行循环 append-only,对齐 DeepSeek 字节稳定的 prefix-cache —— 长会话缓存命中 <b>90%+</b>,输入 token 成本降到 <b>约 1/5</b>。终端优先,需要时也可启动本地浏览器 UI。</span>
+        </p>
+        <div class="hero-cta reveal" style="--d:0.18s">
+          <a class="btn btn-dark" data-os-dl data-goto="desktop" href="#start"><span class="l-en">Download for <span class="os-name">macOS</span></span><span class="l-zh">下载 <span class="os-name">macOS</span> 版</span></a>
+          <span class="install"><span class="ps1">$</span>npm i -g reasonix@next<button data-copy="npm i -g reasonix@next">Copy</button></span>
+          <a class="btn btn-ghost" href="#how"><span class="l-en">How it works ↓</span><span class="l-zh">工作原理 ↓</span></a>
+        </div>
+        <div class="also reveal" style="--d:0.22s"><span class="l-en">Also via <a href="#start" data-goto="brew">Homebrew</a> and <a href="#start" data-goto="desktop">desktop apps</a> · run <code>reasonix serve</code> for the browser UI</span><span class="l-zh">也可通过 <a href="#start" data-goto="brew">Homebrew</a> 与<a href="#start" data-goto="desktop">桌面端</a>安装 · 运行 <code>reasonix serve</code> 打开浏览器 UI</span></div>
+
+        <!-- 中文说明：终端演示卡片，展示真实会话效果。 -->
+        <div class="term-stage reveal" style="--d:0.26s">
+          <div class="fig"><span class="l-en">fig. 01 — a live session, cache still warm</span><span class="l-zh">图 01 —— 一场实时会话,缓存依然温热</span></div>
+          <div class="term">
+            <div class="term-bar"><i></i><i></i><i></i><span class="title">~/app — reasonix</span></div>
+            <div class="term-body"><span class="tl"><span class="t-acc">◆</span> reasonix <span class="t-dim">v1.1.0 · deepseek-v4-flash · ~/app</span></span><span class="tl"><span class="t-vio">›</span> add retry with backoff to the http client</span><span class="tl"><span class="t-ok">✓</span> edit <span class="t-dim">internal/net/client.go</span>  <span class="t-add">+24 −3</span></span><span class="tl"><span class="t-ok">✓</span> edit <span class="t-dim">internal/net/client_test.go</span>  <span class="t-add">+41 −0</span></span><span class="tl"><span class="t-ok">✓</span> run <span class="t-dim">go test ./internal/net/</span>  <span class="t-ok">ok</span> <span class="t-dim">(0.21s)</span></span><span class="tl"><span class="t-warm">●</span> <span class="t-dim">2 files · cache 94.2% → 95.1%</span></span><span class="tl"><span class="t-vio">›</span> <span class="caret"></span></span></div>
+            <div class="term-stat"><span>cache <b data-cnt="95.1" data-dec="1" data-suf="% hit">95.1% hit</b></span><span>session <b data-cnt="18" data-suf="m">18m</b></span><span>model <b>deepseek-v4-flash</b></span><span>cost <b data-cnt="0.043" data-dec="3" data-pre="$">$0.043</b></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 中文说明：特性区块，采用 Bento 栅格布局。 -->
+    <section id="features">
+      <div class="wrap">
+        <div class="sec-head split reveal">
+          <span class="kicker"><span class="l-en">Features</span><span class="l-zh">特性</span></span>
+          <h2><span class="l-en">Built for long, <span class="em">cheap</span> sessions.</span><span class="l-zh">为长会话、<span class="em">低成本</span>而生。</span></h2>
+          <p><span class="l-en">Most agents pay full price for the same growing prompt every turn. Reasonix keeps the prefix byte-identical so DeepSeek's cache does the heavy lifting — and everything else follows.</span><span class="l-zh">多数 agent 每回合都为同一段不断增长的 prompt 付全价。Reasonix 让前缀逐字节稳定,让 DeepSeek 的缓存替你扛下来——其余一切由此而来。</span></p>
+        </div>
+        <div class="feat-grid">
+          <div class="feat reveal">
+            <span class="tag">01 / cache-first</span>
+            <h3><span class="l-en">Cache-first loop</span><span class="l-zh">缓存优先循环</span></h3>
+            <p><span class="l-en">Append-only history aligned to DeepSeek's prefix cache. 90%+ hit on long sessions; input tokens bill at ~1/5.</span><span class="l-zh">append-only 历史对齐 DeepSeek prefix-cache。长会话 90%+ 命中,输入 token 约 1/5 计费。</span></p>
+            <div class="feat-viz" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="n"></i><i class="n"></i><i class="n"></i></div>
+          </div>
+          <div class="feat reveal" style="--d:0.06s">
+            <span class="tag">02 / single binary</span>
+            <h3><span class="l-en">Single Go binary</span><span class="l-zh">单个 Go 二进制</span></h3>
+            <p><span class="l-en">CGO-free, cross-compiled for darwin/linux/windows × amd64/arm64. No Node runtime to install or babysit.</span><span class="l-zh">无 CGO,交叉编译覆盖 darwin/linux/windows × amd64/arm64。运行不需要 Node。</span></p>
+          </div>
+          <div class="feat reveal" style="--d:0.04s">
+            <span class="tag">03 / mcp</span>
+            <h3>MCP first-class</h3>
+            <p><span class="l-en">stdio, SSE, streamable HTTP. External servers merge their tools into one registry under a prefix.</span><span class="l-zh">stdio、SSE、streamable HTTP。外部服务器的工具以前缀合并进同一 registry。</span></p>
+          </div>
+          <div class="feat reveal" style="--d:0.1s">
+            <span class="tag">04 / plan + sandbox</span>
+            <h3><span class="l-en">Plan mode &amp; sandbox</span><span class="l-zh">计划模式 + 沙箱</span></h3>
+            <p><span class="l-en">Writers are jailed to the workspace; <code>/plan</code> gates the session read-only until you approve.</span><span class="l-zh">写工具被关进工作区;<code>/plan</code> 进只读门,批准前不写盘。</span></p>
+            <code class="feat-chip">$ /plan → read-only until approved</code>
+          </div>
+          <div class="feat reveal" style="--d:0.06s">
+            <span class="tag">05 / subagents</span>
+            <h3><span class="l-en">Subagents &amp; skills</span><span class="l-zh">子智能体与技能</span></h3>
+            <p><span class="l-en">explore / research / review / security-review agents, plus Markdown skill scripts with isolated tools.</span><span class="l-zh">explore / research / review / security-review 子智能体,加 Markdown 技能脚本与隔离工具。</span></p>
+          </div>
+          <div class="feat reveal" style="--d:0.1s">
+            <span class="tag">06 / cli + web</span>
+            <h3><span class="l-en">Terminal or browser</span><span class="l-zh">终端或浏览器</span></h3>
+            <p><span class="l-en">Use <code>reasonix</code> in the terminal, or run <code>reasonix serve</code> for a local browser UI with approvals, Goal, todos, and balance.</span><span class="l-zh">在终端使用 <code>reasonix</code>,或运行 <code>reasonix serve</code> 打开本地浏览器 UI,包含审批、Goal、Todo 与余额。</span></p>
+            <code class="feat-chip">$ reasonix serve --auth token</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true"><span class="line"></span></div>
+
+    <!-- 中文说明：工作原理区块，滚动驱动叙事。 -->
+    <section id="how">
+      <div class="how-track">
+        <div class="how-stage">
+          <div class="wrap">
+            <div class="sec-head center reveal">
+              <span class="kicker"><span class="l-en">How it works</span><span class="l-zh">工作原理</span></span>
+              <h2><span class="l-en">Every turn reuses <span class="em">the last.</span></span><span class="l-zh">每一轮都复用<span class="em">上一轮。</span></span></h2>
+              <p><span class="l-en">Each request replays the exact same byte-for-byte prefix, so the model only computes what's new. Long sessions get cheaper per turn — not more expensive.</span><span class="l-zh">每次请求都逐字节重放完全相同的前缀,模型只计算新增部分。会话越长,每轮越便宜——而不是越贵。</span></p>
+            </div>
+            <div class="cache-panel reveal">
+              <div class="cache-grid">
+                <div class="cache-steps">
+                  <span class="cap" data-step="1"><span class="n">01</span><span class="l-en">Cold start — everything is computed</span><span class="l-zh">冷启动——全部需要计算</span></span>
+                  <span class="cap" data-step="2"><span class="n">02</span><span class="l-en">The previous turn replays from cache</span><span class="l-zh">上一轮全部从缓存重放</span></span>
+                  <span class="cap" data-step="3"><span class="n">03</span><span class="l-en">Only the new request is computed</span><span class="l-zh">只计算新增的请求</span></span>
+                  <span class="cap" data-step="4"><span class="n">04</span><span class="l-en">90%+ cache hit — cheaper every turn</span><span class="l-zh">命中 90%+——越跑越便宜</span></span>
+                </div>
+                <div class="cache-rows-wrap">
+                  <div class="cache-row"><span class="lbl">turn 1</span><span class="blk new"></span><span class="blk new"></span><span class="blk new"></span></div>
+                  <div class="cache-row"><span class="lbl">turn 2</span><span class="blk hit"></span><span class="blk hit"></span><span class="blk hit"></span><span class="blk new"></span><span class="blk new"></span></div>
+                  <div class="cache-row"><span class="lbl">turn 3</span><span class="blk hit"></span><span class="blk hit"></span><span class="blk hit"></span><span class="blk hit"></span><span class="blk hit"></span><span class="blk new"></span><span class="blk new"></span><span class="blk new"></span></div>
+                  <div class="cache-row"><span class="lbl">turn 4</span><span class="blk hit"></span><span class="blk hit"></span><span class="blk hit"></span><span class="blk hit"></span><span class="blk hit"></span><span class="blk hit"></span><span class="blk hit"></span><span class="blk hit"></span><span class="blk new"></span><span class="blk new"></span></div>
+                  <div class="cache-legend">
+                    <span><i style="background: var(--accent);"></i><span class="l-en">new tokens — computed</span><span class="l-zh">新 token——需要计算</span></span>
+                    <span><i style="background: color-mix(in oklch, var(--accent) 12%, transparent); border: 1px solid color-mix(in oklch, var(--accent) 40%, transparent);"></i><span class="l-en">cached prefix — replayed, billed at ~1/5</span><span class="l-zh">缓存前缀——重放,约 1/5 计费</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true"><span class="line"></span></div>
+
+    <!-- 中文说明：快速上手四步流程。 -->
+    <section>
+      <div class="wrap">
+        <div class="steps">
+          <div class="step reveal">
+            <span class="num">01</span>
+            <h3><span class="l-en">Install</span><span class="l-zh">安装</span></h3>
+            <p><span class="l-en">One command. macOS, Linux, Windows, and WSL.</span><span class="l-zh">一条命令,支持 macOS、Linux、Windows 与 WSL。</span></p>
+            <code>npm i -g reasonix@next</code>
+          </div>
+          <div class="step reveal" style="--d:0.08s">
+            <span class="num">02</span>
+            <h3><span class="l-en">Point it at a repo</span><span class="l-zh">指向你的仓库</span></h3>
+            <p><span class="l-en">Reasonix maps the codebase once, then keeps that map in the warm prefix.</span><span class="l-zh">Reasonix 只做一次代码库测绘,然后把这份地图常驻在温热的前缀缓存里。</span></p>
+            <code>cd your-project &amp;&amp; reasonix</code>
+          </div>
+          <div class="step reveal" style="--d:0.16s">
+            <span class="num">03</span>
+            <h3><span class="l-en">Open the web UI</span><span class="l-zh">打开 Web UI</span></h3>
+            <p><span class="l-en">Keep it local, or add token/password auth before sharing a tunnel or remote port.</span><span class="l-zh">本机使用保持默认；通过 tunnel 或远程端口分享前,先启用 token/password 认证。</span></p>
+            <code>reasonix serve --auth token</code>
+          </div>
+          <div class="step reveal" style="--d:0.24s">
+            <span class="num">04</span>
+            <h3><span class="l-en">Leave it running</span><span class="l-zh">让它一直跑着</span></h3>
+            <p><span class="l-en">Queue tasks, review diffs, resume anytime. The session never goes cold.</span><span class="l-zh">排任务、看 diff、随时恢复。会话永不冷却。</span></p>
+            <code>› refactor the auth flow</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true"><span class="line"></span></div>
+
+    <!-- 中文说明：社区与贡献者展示区块。 -->
+    <section id="community">
+      <div class="wrap">
+        <div class="sec-head split reveal">
+          <span class="kicker"><span class="l-en">Community</span><span class="l-zh">社区共建</span></span>
+          <h2><span class="l-en">Built in the open, with <span class="em">44 contributors.</span></span><span class="l-zh">开源共建,感谢 <span class="em">44 位贡献者。</span></span></h2>
+          <p><span class="l-en">Reasonix is MIT-licensed and developed in public. Every issue, every PR, every late-night review made it what it is — thank you.</span><span class="l-zh">Reasonix 采用 MIT 许可,开放开发。每一个 issue、每一条 PR、每一次深夜 review,成就了今天的它——谢谢你们。</span></p>
+        </div>
+      </div>
+      <div class="crew reveal" aria-hidden="false">
+        <div class="crew-row">
+          <span class="crew-set">
+            <a class="av sm" data-h="@esengine" href="https://github.com/esengine" target="_blank" rel="noreferrer" aria-label="esengine"><img src="/av/esengine.png" alt="esengine" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@SivanCola" href="https://github.com/SivanCola" target="_blank" rel="noreferrer" aria-label="SivanCola"><img src="/av/SivanCola.png" alt="SivanCola" loading="lazy" width="60" height="60" /></a>
+            <a class="av sm" data-h="@HUQIANTAO" href="https://github.com/HUQIANTAO" target="_blank" rel="noreferrer" aria-label="HUQIANTAO"><img src="/av/HUQIANTAO.png" alt="HUQIANTAO" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@GTC2080" href="https://github.com/GTC2080" target="_blank" rel="noreferrer" aria-label="GTC2080"><img src="/av/GTC2080.png" alt="GTC2080" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@lanshi17" href="https://github.com/lanshi17" target="_blank" rel="noreferrer" aria-label="lanshi17"><img src="/av/lanshi17.png" alt="lanshi17" loading="lazy" width="60" height="60" /></a>
+            <a class="av sm" data-h="@SuMuxi66" href="https://github.com/SuMuxi66" target="_blank" rel="noreferrer" aria-label="SuMuxi66"><img src="/av/SuMuxi66.png" alt="SuMuxi66" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@Li-Charles-One" href="https://github.com/Li-Charles-One" target="_blank" rel="noreferrer" aria-label="Li-Charles-One"><img src="/av/Li-Charles-One.png" alt="Li-Charles-One" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@CVEngineer66" href="https://github.com/CVEngineer66" target="_blank" rel="noreferrer" aria-label="CVEngineer66"><img src="/av/CVEngineer66.png" alt="CVEngineer66" loading="lazy" width="60" height="60" /></a>
+            <a class="av lg" data-h="@wade19990814-hue" href="https://github.com/wade19990814-hue" target="_blank" rel="noreferrer" aria-label="wade19990814-hue"><img src="/av/wade19990814-hue.png" alt="wade19990814-hue" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@paradoxSCH" href="https://github.com/paradoxSCH" target="_blank" rel="noreferrer" aria-label="paradoxSCH"><img src="/av/paradoxSCH.png" alt="paradoxSCH" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@YoungDan-hero" href="https://github.com/YoungDan-hero" target="_blank" rel="noreferrer" aria-label="YoungDan-hero"><img src="/av/YoungDan-hero.png" alt="YoungDan-hero" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@lizhengwu" href="https://github.com/lizhengwu" target="_blank" rel="noreferrer" aria-label="lizhengwu"><img src="/av/lizhengwu.png" alt="lizhengwu" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@Bernardxu123" href="https://github.com/Bernardxu123" target="_blank" rel="noreferrer" aria-label="Bernardxu123"><img src="/av/Bernardxu123.png" alt="Bernardxu123" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@CnsMaple" href="https://github.com/CnsMaple" target="_blank" rel="noreferrer" aria-label="CnsMaple"><img src="/av/CnsMaple.png" alt="CnsMaple" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@jiaxindeyang-a11y" href="https://github.com/jiaxindeyang-a11y" target="_blank" rel="noreferrer" aria-label="jiaxindeyang-a11y"><img src="/av/jiaxindeyang-a11y.png" alt="jiaxindeyang-a11y" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@kekexunxun" href="https://github.com/kekexunxun" target="_blank" rel="noreferrer" aria-label="kekexunxun"><img src="/av/kekexunxun.png" alt="kekexunxun" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@Tatlatat" href="https://github.com/Tatlatat" target="_blank" rel="noreferrer" aria-label="Tatlatat"><img src="/av/Tatlatat.png" alt="Tatlatat" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@AtmoOmen" href="https://github.com/AtmoOmen" target="_blank" rel="noreferrer" aria-label="AtmoOmen"><img src="/av/AtmoOmen.png" alt="AtmoOmen" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@nostalgia296" href="https://github.com/nostalgia296" target="_blank" rel="noreferrer" aria-label="nostalgia296"><img src="/av/nostalgia296.png" alt="nostalgia296" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@yhemeo613" href="https://github.com/yhemeo613" target="_blank" rel="noreferrer" aria-label="yhemeo613"><img src="/av/yhemeo613.png" alt="yhemeo613" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@whale-fall-ouo" href="https://github.com/whale-fall-ouo" target="_blank" rel="noreferrer" aria-label="whale-fall-ouo"><img src="/av/whale-fall-ouo.png" alt="whale-fall-ouo" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@ttmouse" href="https://github.com/ttmouse" target="_blank" rel="noreferrer" aria-label="ttmouse"><img src="/av/ttmouse.png" alt="ttmouse" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@lightfront" href="https://github.com/lightfront" target="_blank" rel="noreferrer" aria-label="lightfront"><img src="/av/lightfront.png" alt="lightfront" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@iysun" href="https://github.com/iysun" target="_blank" rel="noreferrer" aria-label="iysun"><img src="/av/iysun.png" alt="iysun" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@closss" href="https://github.com/closss" target="_blank" rel="noreferrer" aria-label="closss"><img src="/av/closss.png" alt="closss" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@XTLine" href="https://github.com/XTLine" target="_blank" rel="noreferrer" aria-label="XTLine"><img src="/av/XTLine.png" alt="XTLine" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@LVGG" href="https://github.com/LVGG" target="_blank" rel="noreferrer" aria-label="LVGG"><img src="/av/LVGG.png" alt="LVGG" loading="lazy" width="60" height="60" /></a>
+            <a class="av sm" data-h="@xinrenH" href="https://github.com/xinrenH" target="_blank" rel="noreferrer" aria-label="xinrenH"><img src="/av/xinrenH.png" alt="xinrenH" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@lifu963" href="https://github.com/lifu963" target="_blank" rel="noreferrer" aria-label="lifu963"><img src="/av/lifu963.png" alt="lifu963" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@kabaka9527" href="https://github.com/kabaka9527" target="_blank" rel="noreferrer" aria-label="kabaka9527"><img src="/av/kabaka9527.png" alt="kabaka9527" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@dcs02280653-collab" href="https://github.com/dcs02280653-collab" target="_blank" rel="noreferrer" aria-label="dcs02280653-collab"><img src="/av/dcs02280653-collab.png" alt="dcs02280653-collab" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@ashishexee" href="https://github.com/ashishexee" target="_blank" rel="noreferrer" aria-label="ashishexee"><img src="/av/ashishexee.png" alt="ashishexee" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@alxbnct" href="https://github.com/alxbnct" target="_blank" rel="noreferrer" aria-label="alxbnct"><img src="/av/alxbnct.png" alt="alxbnct" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@PorunC" href="https://github.com/PorunC" target="_blank" rel="noreferrer" aria-label="PorunC"><img src="/av/PorunC.png" alt="PorunC" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@ERroooooR" href="https://github.com/ERroooooR" target="_blank" rel="noreferrer" aria-label="ERroooooR"><img src="/av/ERroooooR.png" alt="ERroooooR" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@LegGasai" href="https://github.com/LegGasai" target="_blank" rel="noreferrer" aria-label="LegGasai"><img src="/av/LegGasai.png" alt="LegGasai" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@JimmyDaddy" href="https://github.com/JimmyDaddy" target="_blank" rel="noreferrer" aria-label="JimmyDaddy"><img src="/av/JimmyDaddy.png" alt="JimmyDaddy" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@drafish" href="https://github.com/drafish" target="_blank" rel="noreferrer" aria-label="drafish"><img src="/av/drafish.png" alt="drafish" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@JesonChou" href="https://github.com/JesonChou" target="_blank" rel="noreferrer" aria-label="JesonChou"><img src="/av/JesonChou.png" alt="JesonChou" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@HorusJiang" href="https://github.com/HorusJiang" target="_blank" rel="noreferrer" aria-label="HorusJiang"><img src="/av/HorusJiang.png" alt="HorusJiang" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@HBLADEH" href="https://github.com/HBLADEH" target="_blank" rel="noreferrer" aria-label="HBLADEH"><img src="/av/HBLADEH.png" alt="HBLADEH" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@Diarica" href="https://github.com/Diarica" target="_blank" rel="noreferrer" aria-label="Diarica"><img src="/av/Diarica.png" alt="Diarica" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@Nahiyi" href="https://github.com/Nahiyi" target="_blank" rel="noreferrer" aria-label="Nahiyi"><img src="/av/Nahiyi.png" alt="Nahiyi" loading="lazy" width="60" height="60" /></a>
+            <a class="av" data-h="@i1j" href="https://github.com/i1j" target="_blank" rel="noreferrer" aria-label="i1j"><img src="/av/i1j.png" alt="i1j" loading="lazy" width="60" height="60" /></a>
+          </span>
+        </div>
+        <div class="crew-row rev">
+          <span class="crew-set">
+            <a class="av you" data-h="this could be you · 虚位以待" href="https://github.com/esengine/DeepSeek-Reasonix/issues" target="_blank" rel="noreferrer">+</a>
+          </span>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="crew-cta reveal">
+          <a class="btn btn-dark" href="https://github.com/esengine/DeepSeek-Reasonix"><span class="l-en">Contribute on GitHub</span><span class="l-zh">在 GitHub 上参与贡献</span></a>
+          <a class="btn btn-ghost" href="https://github.com/esengine/DeepSeek-Reasonix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22"><span class="l-en">Good first issues →</span><span class="l-zh">新手友好任务 →</span></a>
+        </div>
+        <div class="crew-note reveal"><span class="l-en">20,910 stars · 1,799 merged PRs · every avatar above is a real contributor</span><span class="l-zh">20,910 个 star · 1,799 个已合并 PR · 上面每个头像都是一位真实贡献者</span></div>
+      </div>
+    </section>
+
+    <!-- 中文说明：首页底部引导下载与安装方式。 -->
+    <section class="cta" id="start">
+      <div class="wrap">
+        <h2 class="reveal"><span class="l-en">Start a session that <span class="em">lasts.</span></span><span class="l-zh">开启一场<span class="em">不会中断</span>的会话。</span></h2>
+        <p class="reveal" style="--d:0.08s"><span class="l-en">Open source under MIT. Bring your own DeepSeek API key — your code never leaves your machine and the model.</span><span class="l-zh">MIT 开源。使用你自己的 DeepSeek API Key——代码不会离开你的机器与模型。</span></p>
+
+        <div class="dl reveal" style="--d:0.14s">
+          <div class="dl-tabs" role="tablist">
+            <button class="dl-tab active" type="button" data-pane="npm" role="tab">npm</button>
+            <button class="dl-tab" type="button" data-pane="brew" role="tab">Homebrew</button>
+            <button class="dl-tab" type="button" data-pane="desktop" role="tab"><span class="l-en">Desktop</span><span class="l-zh">桌面端</span></button>
+          </div>
+
+          <div class="dl-pane active" data-pane="npm">
+            <span class="install"><span class="ps1">$</span>npm i -g reasonix@next<button data-copy="npm i -g reasonix@next">Copy</button></span>
+            <div class="chan">
+              <div class="chan-row rec">
+                <code>npm i -g reasonix@next</code><span class="v">v1.1.0</span>
+                <span class="s"><span class="l-en">Go rewrite · one binary · no Node · actively developed</span><span class="l-zh">Go 重写 · 单二进制 · 无需 Node · 主力开发中</span></span>
+                <span class="chan-badge"><span class="l-en">recommended</span><span class="l-zh">推荐</span></span>
+              </div>
+              <div class="chan-row">
+                <code>npm i -g reasonix</code><span class="v">v0.53</span>
+                <span class="s"><span class="l-en">deprecated 0.x line · no longer maintained</span><span class="l-zh">已废弃的 0.x 线 · 不再维护</span></span>
+                <span class="chan-badge pre"><span class="l-en">deprecated</span><span class="l-zh">已废弃</span></span>
+              </div>
+            </div>
+            <div class="dl-note"><span class="l-en">macOS / Linux / Windows / WSL · the <span class="mono">latest</span> tag is pinned at v0.53 — always install from <span class="mono">@next</span> · <a class="rxnotes" href="https://github.com/esengine/DeepSeek-Reasonix/releases/tag/v1.1.0">v1.1.0 release notes →</a></span><span class="l-zh">macOS / Linux / Windows / WSL · <span class="mono">latest</span> 标签固定在 v0.53——请始终通过 <span class="mono">@next</span> 安装 · <a class="rxnotes" href="https://github.com/esengine/DeepSeek-Reasonix/releases/tag/v1.1.0">v1.1.0 更新说明 →</a></span></div>
+          </div>
+
+          <div class="dl-pane" data-pane="brew">
+            <span class="install"><span class="ps1">$</span>brew install esengine/reasonix/reasonix<button data-copy="brew install esengine/reasonix/reasonix">Copy</button></span>
+            <div class="dl-note"><span class="l-en">v1.1.0 (Go rewrite) · macOS &amp; Linux · update with <span class="mono">brew upgrade</span></span><span class="l-zh">v1.1.0(Go 重写)· macOS 与 Linux · 通过 <span class="mono">brew upgrade</span> 更新</span></div>
+          </div>
+
+          <div class="dl-pane" data-pane="desktop">
+            <div class="os-grid">
+              <div class="os-card" data-os="mac">
+                <h4>macOS</h4>
+                <span class="meta"><span class="l-en">Universal DMG · Apple Silicon &amp; Intel</span><span class="l-zh">通用 DMG · Apple Silicon 与 Intel</span></span>
+                <a class="btn btn-light" href="https://dl.reasonix.io/desktop-v1.1.0/Reasonix-darwin-universal.dmg" data-desktop-asset="Reasonix-darwin-universal.dmg" download><span class="l-en">Download Universal · v1.1.0</span><span class="l-zh">下载通用版 · v1.1.0</span></a>
+                <div class="os-options" aria-label="macOS alternate downloads">
+                  <a href="https://dl.reasonix.io/desktop-v1.1.0/Reasonix-darwin-arm64.zip" data-desktop-asset="Reasonix-darwin-arm64.zip" download>Apple Silicon zip</a>
+                  <a href="https://dl.reasonix.io/desktop-v1.1.0/Reasonix-darwin-amd64.zip" data-desktop-asset="Reasonix-darwin-amd64.zip" download>Intel zip</a>
+                </div>
+              </div>
+              <div class="os-card" data-os="win">
+                <h4>Windows</h4>
+                <span class="meta"><span class="l-en">Installer · Windows 10+ · x64 / ARM64</span><span class="l-zh">安装器 · Windows 10+ · x64 / ARM64</span></span>
+                <a class="btn btn-light" href="https://dl.reasonix.io/desktop-v1.1.0/Reasonix-windows-amd64-installer.exe" data-desktop-asset="Reasonix-windows-amd64-installer.exe" download><span class="l-en">Download · v1.1.0</span><span class="l-zh">下载 · v1.1.0</span></a>
+                <div class="os-options" aria-label="Windows alternate downloads">
+                  <a href="https://dl.reasonix.io/desktop-v1.1.0/Reasonix-windows-arm64-installer.exe" data-desktop-asset="Reasonix-windows-arm64-installer.exe" download>ARM64 installer</a>
+                  <a href="https://dl.reasonix.io/desktop-v1.1.0/Reasonix-windows-amd64.zip" data-desktop-asset="Reasonix-windows-amd64.zip" download>Portable zip</a>
+                </div>
+              </div>
+              <div class="os-card" data-os="linux">
+                <h4>Linux</h4>
+                <span class="meta"><span class="l-en">Debian / Ubuntu package · amd64</span><span class="l-zh">Debian / Ubuntu 安装包 · amd64</span></span>
+                <a class="btn btn-light" href="https://dl.reasonix.io/desktop-v1.1.0/Reasonix-linux-amd64.deb" data-desktop-asset="Reasonix-linux-amd64.deb" download><span class="l-en">Download .deb · v1.1.0</span><span class="l-zh">下载 .deb · v1.1.0</span></a>
+                <div class="os-options" aria-label="Linux alternate downloads">
+                  <a href="https://dl.reasonix.io/desktop-v1.1.0/Reasonix-linux-amd64.tar.gz" data-desktop-asset="Reasonix-linux-amd64.tar.gz" download>Generic tar.gz</a>
+                  <a href="https://github.com/esengine/DeepSeek-Reasonix/releases"><span class="l-en">All releases</span><span class="l-zh">全部版本</span></a>
+                </div>
+              </div>
+            </div>
+            <div class="dl-note"><span class="l-en">v1.1.0 · built-in auto-updates · same engine as the CLI · <a href="https://github.com/esengine/DeepSeek-Reasonix/releases">all releases →</a></span><span class="l-zh">v1.1.0 · 内置自动更新 · 与 CLI 同一引擎 · <a href="https://github.com/esengine/DeepSeek-Reasonix/releases">全部版本 →</a></span></div>
+            <div class="dl-help">
+              <strong><span class="l-en">macOS opens with a quarantine warning?</span><span class="l-zh">macOS 提示无法打开或已损坏?</span></strong>
+              <span><span class="l-en">If the app was installed from the official download and placed in <code>/Applications</code>, quit Reasonix, then run:</span><span class="l-zh">如果来自官网下载并已放入 <code>/Applications</code>,先退出 Reasonix,再运行:</span></span>
+              <code>sudo xattr -rd com.apple.quarantine /Applications/Reasonix.app</code>
+              <button type="button" data-copy="sudo xattr -rd com.apple.quarantine /Applications/Reasonix.app">Copy</button>
+              <a href="/docs.html#macos-quarantine"><span class="l-en">When to use this →</span><span class="l-zh">查看适用场景 →</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 中文说明：页脚，包含版权、链接与版本标识。 -->
+  <footer>
+    <div class="foot-inner">
+      <a class="brand" href="/"><img src="/logo.svg" alt="Reasonix logo" /><span>Reasonix</span></a>
+      <span><span class="l-en">© 2026 Reasonix · MIT licensed · built to be left running.</span><span class="l-zh">© 2026 Reasonix · MIT 许可 · 为常驻运行而生。</span></span>
+      <nav class="foot-links">
+        <a href="https://github.com/esengine/DeepSeek-Reasonix">GitHub</a>
+        <a href="https://www.npmjs.com/package/reasonix">npm</a>
+        <a href="https://platform.deepseek.com" target="_blank" rel="noreferrer">DeepSeek</a>
+        <a href="/docs.html"><span class="l-en">Docs</span><span class="l-zh">文档</span></a>
+        <a href="#start"><span class="l-en">Install</span><span class="l-zh">安装</span></a>
+        <a href="https://crash.reasonix.io/stats" rel="nofollow"><span class="l-en">Stats</span><span class="l-zh">统计</span></a>
+      </nav>
+    </div>
+    <div class="foot-sub">
+      <span><span class="l-en">Engineered around DeepSeek's prefix cache.</span><span class="l-zh">围绕 DeepSeek 前缀缓存而设计。</span></span>
+      <span class="ver">v1.1.0 · @next</span>
+    </div>
+  </footer>
+
+  <!-- 中文说明：首页交互脚本，负责滚动显示、语言切换、版本刷新与下载标签切换。 -->
+  <script>
+// Reasonix site — vanilla interactions
+(function () {
+  const motionOK = () =>
+    document.body.dataset.motion === "rich" &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const nav = document.querySelector(".nav");
+  if (nav) {
+    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 12);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
+
+  const revealEls = Array.from(document.querySelectorAll(".reveal"));
+  const inView = (el, factor) =>
+    el.getBoundingClientRect().top < window.innerHeight * (factor || 0.95);
+
+  const term = document.querySelector(".term");
+  const lines = Array.from(document.querySelectorAll(".term-body .tl"));
+  let played = false;
+  const playTerm = () => {
+    if (played) return;
+    played = true;
+    const fire = () => document.dispatchEvent(new CustomEvent("rx:term-played"));
+    if (!motionOK()) {
+      lines.forEach((l) => l.classList.add("on"));
+      fire();
+      return;
+    }
+    lines.forEach((l, i) => setTimeout(() => l.classList.add("on"), 350 + i * 520));
+    setTimeout(fire, 350 + Math.max(0, lines.length - 2) * 520);
+  };
+
+  let sweepQueued = false;
+  const sweep = () => {
+    sweepQueued = false;
+    revealEls.forEach((el) => {
+      if (!el.classList.contains("in") && inView(el, 0.95)) el.classList.add("in");
+    });
+    if (term && !played && inView(term, 0.85)) playTerm();
+  };
+  const queueSweep = () => {
+    if (sweepQueued) return;
+    sweepQueued = true;
+    requestAnimationFrame(sweep);
+  };
+  window.addEventListener("scroll", queueSweep, { passive: true });
+  window.addEventListener("resize", queueSweep, { passive: true });
+  window.addEventListener("load", queueSweep);
+  sweep();
+  setTimeout(sweep, 400);
+
+  /* contributors marquee — duplicate the server-rendered set for a seamless loop */
+  document.querySelectorAll(".crew-row").forEach((row) => {
+    const set = row.querySelector(".crew-set");
+    if (set) row.appendChild(set.cloneNode(true));
+  });
+
+  /* download / channel tabs */
+  const tabs = Array.from(document.querySelectorAll(".dl-tab"));
+  const panes = Array.from(document.querySelectorAll(".dl-pane"));
+  const activatePane = (name) => {
+    tabs.forEach((b) => b.classList.toggle("active", b.dataset.pane === name));
+    panes.forEach((p) => p.classList.toggle("active", p.dataset.pane === name));
+  };
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => activatePane(tab.dataset.pane));
+  });
+
+  /* OS detection — hero download button + card badge + highlight */
+  const ua = navigator.userAgent;
+  const os = /Windows/i.test(ua) ? "win" : /Mac|iPhone|iPad/i.test(ua) ? "mac" : /Linux|X11/i.test(ua) ? "linux" : "mac";
+  const osNames = { mac: "macOS", win: "Windows", linux: "Linux" };
+  document.querySelectorAll("[data-os-dl] .os-name").forEach((s) => (s.textContent = osNames[os]));
+  const osCard = document.querySelector('.os-card[data-os="' + os + '"]');
+  if (osCard) {
+    osCard.classList.add("detected");
+    const chip = document.createElement("span");
+    chip.className = "os-chip";
+    chip.innerHTML = '<span class="l-en">your OS</span><span class="l-zh">当前系统</span>';
+    osCard.appendChild(chip);
+  }
+
+  /* links that deep-link into a specific download tab */
+  document.querySelectorAll("[data-goto]").forEach((a) => {
+    a.addEventListener("click", () => {
+      activatePane(a.dataset.goto);
+      if (a.hasAttribute("data-os-dl") && osCard) {
+        osCard.classList.remove("flash");
+        void osCard.offsetWidth;
+        setTimeout(() => osCard.classList.add("flash"), 450);
+        setTimeout(() => osCard.classList.remove("flash"), 2600);
+      }
+      setTimeout(queueSweep, 500);
+    });
+  });
+
+  /* language switch */
+  const LANG_KEY = "reasonix-lang";
+  const langBtns = Array.from(document.querySelectorAll(".lang-switch button"));
+  const setLang = (l) => {
+    document.body.dataset.lang = l;
+    document.documentElement.lang = l === "zh" ? "zh-CN" : "en";
+    const t = document.body.dataset[l === "zh" ? "titleZh" : "titleEn"];
+    if (t) document.title = t;
+    langBtns.forEach((b) => b.classList.toggle("active", b.dataset.lang === l));
+    try { localStorage.setItem(LANG_KEY, l); } catch (e) {}
+  };
+  langBtns.forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
+  let savedLang = "";
+  try { savedLang = localStorage.getItem(LANG_KEY) || ""; } catch (e) {}
+  setLang(savedLang || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en"));
+
+  /* copy-to-clipboard */
+  document.querySelectorAll("[data-copy]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const text = btn.getAttribute("data-copy");
+      const done = () => {
+        btn.classList.add("copied");
+        const prev = btn.textContent;
+        btn.textContent = "Copied";
+        setTimeout(() => { btn.classList.remove("copied"); btn.textContent = prev; }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(done);
+      } else done();
+    });
+  });
+
+  /* refresh the published version and immutable desktop download links between rebuilds */
+  const desktopAssets = [
+    "Reasonix-darwin-universal.dmg",
+    "Reasonix-darwin-arm64.zip",
+    "Reasonix-darwin-amd64.zip",
+    "Reasonix-windows-amd64-installer.exe",
+    "Reasonix-windows-arm64-installer.exe",
+    "Reasonix-windows-amd64.zip",
+    "Reasonix-linux-amd64.deb",
+    "Reasonix-linux-amd64.tar.gz",
+  ];
+  fetch("https://dl.reasonix.io/latest/latest.json", { cache: "no-cache" })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => {
+      const rawVersion = String((d && d.version) || "");
+      const versionMatch = rawVersion.match(/^v?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$/);
+      if (!versionMatch) return;
+      const v = versionMatch[1];
+      const desktopBase = "https://dl.reasonix.io/desktop-v" + v;
+      document.querySelectorAll(".rxv").forEach((e) => { e.textContent = v; });
+      desktopAssets.forEach((asset) => {
+        document.querySelectorAll('[data-desktop-asset="' + asset + '"]').forEach((a) => {
+          a.href = desktopBase + "/" + asset;
+        });
+      });
+      document.querySelectorAll("a.rxnotes").forEach((a) => {
+        a.href = a.href.replace(/releases\/tag\/v[^/]*$/, "releases/tag/v" + v);
+      });
+    })
+    .catch(() => {});
+})();
+  </script>
+
+  <!-- 中文说明：首页视觉特效脚本，包括粒子背景、终端打字、磁吸按钮与计数器动画。 -->
+  <script>
+// Reasonix — motion & FX layer (all effects respect data-motion + prefers-reduced-motion)
+(function () {
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const rich = () => document.body.dataset.motion === "rich" && !reduced;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const mouse = { x: innerWidth / 2, y: innerHeight / 2, active: false };
+  window.addEventListener("mousemove", (e) => {
+    mouse.x = e.clientX; mouse.y = e.clientY; mouse.active = true;
+  }, { passive: true });
+
+  /* particle grid (hero canvas) */
+  const canvas = document.querySelector(".hero-dots");
+  if (canvas) {
+    const ctx = canvas.getContext("2d");
+    const hero = canvas.parentElement;
+    let w = 0, h = 0, dpr = 1, dots = [];
+    const SP = 36;
+    const build = () => {
+      dpr = Math.min(devicePixelRatio || 1, 2);
+      const r = hero.getBoundingClientRect();
+      w = r.width; h = r.height;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      canvas.style.width = w + "px"; canvas.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      dots = [];
+      for (let y = SP; y < h - 8; y += SP)
+        for (let x = SP / 2 + ((y / SP) % 2 ? SP / 2 : 0); x < w - 8; x += SP)
+          dots.push({ x, y, a: 0 });
+    };
+    build();
+    window.addEventListener("resize", build);
+    let mx = -9999, my = -9999;
+    const accent = () =>
+      getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#3a5fd0";
+    const tick = () => {
+      requestAnimationFrame(tick);
+      const r = hero.getBoundingClientRect();
+      if (r.bottom < 0) return;
+      ctx.clearRect(0, 0, w, h);
+      if (!rich()) return;
+      const tx = mouse.active ? mouse.x - r.left : -9999;
+      const ty = mouse.active ? mouse.y - r.top : -9999;
+      mx = lerp(mx < -999 ? tx : mx, tx, 0.14);
+      my = lerp(my < -999 ? ty : my, ty, 0.14);
+      const col = accent();
+      for (const d of dots) {
+        const dist = Math.hypot(d.x - mx, d.y - my);
+        const target = dist < 150 ? 1 - dist / 150 : 0;
+        d.a = lerp(d.a, target, 0.12);
+        const base = 0.13;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, 1.1 + d.a * 1.3, 0, 7);
+        if (d.a > 0.02) { ctx.globalAlpha = base + d.a * 0.65; ctx.fillStyle = col; }
+        else { ctx.globalAlpha = base; ctx.fillStyle = "#9aa0a6"; }
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    };
+    tick();
+  }
+
+  /* cursor glow */
+  const glowEl = document.querySelector(".cursor-glow");
+  if (glowEl && matchMedia("(pointer: fine)").matches) {
+    let gx = mouse.x, gy = mouse.y;
+    const move = () => {
+      requestAnimationFrame(move);
+      if (!rich() || !mouse.active) { glowEl.style.opacity = 0; return; }
+      glowEl.style.opacity = 1;
+      gx = lerp(gx, mouse.x, 0.09);
+      gy = lerp(gy, mouse.y, 0.09);
+      glowEl.style.transform = `translate(${gx}px, ${gy}px) translate(-50%, -50%)`;
+    };
+    move();
+  }
+
+  /* typewriter headline (re-runs per language) */
+  const typeH1 = () => {
+    const lang = document.body.dataset.lang || "en";
+    const span = document.querySelector(`.hero h1 .l-${lang}`);
+    if (!span || span.dataset.typed || !rich()) return;
+    span.dataset.typed = "1";
+    const walker = document.createTreeWalker(span, NodeFilter.SHOW_TEXT);
+    const texts = [];
+    while (walker.nextNode()) texts.push(walker.currentNode);
+    const chars = [];
+    texts.forEach((node) => {
+      const frag = document.createDocumentFragment();
+      for (const ch of node.textContent) {
+        const s = document.createElement("span");
+        s.className = "ch";
+        s.textContent = ch;
+        frag.appendChild(s);
+        chars.push(s);
+      }
+      node.parentNode.replaceChild(frag, node);
+    });
+    const caret = document.createElement("span");
+    caret.className = "type-caret";
+    let i = 0;
+    const step = () => {
+      if (i >= chars.length) { setTimeout(() => caret.remove(), 900); return; }
+      const c = chars[i++];
+      c.classList.add("on");
+      c.after(caret);
+      setTimeout(step, c.textContent.trim() ? 34 : 10);
+    };
+    setTimeout(step, 250);
+  };
+  typeH1();
+  new MutationObserver(() => typeH1())
+    .observe(document.body, { attributes: true, attributeFilter: ["data-lang"] });
+
+  /* terminal 3D tilt toward cursor */
+  const term = document.querySelector(".term");
+  if (term && matchMedia("(pointer: fine)").matches) {
+    const stage = term.parentElement;
+    let rx = 0, ry = 0, trx = 0, try_ = 0;
+    stage.addEventListener("mousemove", (e) => {
+      const r = stage.getBoundingClientRect();
+      try_ = ((e.clientX - r.left) / r.width - 0.5) * 5;
+      trx = (0.5 - (e.clientY - r.top) / r.height) * 4;
+    });
+    stage.addEventListener("mouseleave", () => { trx = 0; try_ = 0; });
+    const tilt = () => {
+      requestAnimationFrame(tilt);
+      if (!rich()) { term.style.transform = ""; return; }
+      rx = lerp(rx, trx, 0.08);
+      ry = lerp(ry, try_, 0.08);
+      term.style.transform = `rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+    };
+    tilt();
+  }
+
+  /* magnetic buttons */
+  if (matchMedia("(pointer: fine)").matches) {
+    document.querySelectorAll(".btn").forEach((btn) => {
+      btn.addEventListener("mousemove", (e) => {
+        if (!rich()) return;
+        const r = btn.getBoundingClientRect();
+        const dx = (e.clientX - r.left - r.width / 2) / r.width;
+        const dy = (e.clientY - r.top - r.height / 2) / r.height;
+        btn.style.transform = `translate(${dx * 5}px, ${dy * 4 - 1}px)`;
+      });
+      btn.addEventListener("mouseleave", () => { btn.style.transform = ""; });
+    });
+  }
+
+  /* spotlight border on cards */
+  document.querySelectorAll(".feat, .os-card, .doc-card").forEach((card) => {
+    card.addEventListener("mousemove", (e) => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty("--mx", e.clientX - r.left + "px");
+      card.style.setProperty("--my", e.clientY - r.top + "px");
+    });
+  });
+
+  /* stat counters (run when terminal playback finishes) */
+  const counters = Array.from(document.querySelectorAll("[data-cnt]"));
+  const fmt = (el, v) => {
+    if (el.dataset.fmt === "hm") {
+      const m = Math.round(v);
+      return Math.floor(m / 60) + "h " + (m % 60) + "m";
+    }
+    const dec = +(el.dataset.dec || 0);
+    return (el.dataset.pre || "") + v.toFixed(dec) + (el.dataset.suf || "");
+  };
+  const runCounters = () => {
+    counters.forEach((el) => {
+      const target = parseFloat(el.dataset.cnt);
+      if (!rich()) { el.textContent = fmt(el, target); return; }
+      const t0 = performance.now(), dur = 1500;
+      const frame = (t) => {
+        const p = Math.min(1, (t - t0) / dur);
+        const e = 1 - Math.pow(1 - p, 3);
+        el.textContent = fmt(el, target * e);
+        if (p < 1) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+  };
+  document.addEventListener("rx:term-played", runCounters);
+
+  /* scroll-driven cache narrative (sticky) */
+  const track = document.querySelector(".how-track");
+  if (track) {
+    const rows = Array.from(track.querySelectorAll(".cache-row"));
+    const caps = Array.from(track.querySelectorAll(".cap"));
+    rows.forEach((row) =>
+      row.querySelectorAll(".blk").forEach((b, i) => b.style.setProperty("--i", i)));
+    const stickyOK = () => rich() && innerWidth > 900;
+    const setStep = (n) => {
+      rows.forEach((r, i) => r.classList.toggle("row-on", i < n));
+      caps.forEach((c) => c.classList.toggle("on", +c.dataset.step === n));
+    };
+    const onScroll = () => {
+      if (!stickyOK()) {
+        document.body.classList.add("how-flat");
+        setStep(4);
+        return;
+      }
+      document.body.classList.remove("how-flat");
+      const r = track.getBoundingClientRect();
+      const total = r.height - innerHeight;
+      const p = Math.min(1, Math.max(0, -r.top / total));
+      if (r.top > innerHeight) { setStep(0); return; }
+      setStep(Math.min(4, 1 + Math.floor(p * 4)));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    onScroll();
+  }
+})();
+  </script>
+</body>
+</html>
