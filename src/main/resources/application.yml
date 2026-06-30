@@ -13,16 +13,16 @@ spring:
 # Reasonix 核心配置
 # =========================================
 reasonix:
-  default-model: step-3.7-flash
+  default-model: stepfun-3.7-flash
   max-steps: 50
   temperature: 0.7
   auto-plan: false
   compact-ratio: 0.85
-  planner-model: step-3.7-flash
+  planner-model: stepfun-3.7-flash
 
   # ---- 供应商-模型两层配置 ----
   provider:
-    default-model: step-3.7-flash
+    default-model: stepfun-3.7-flash
     timeout: 60s
     suppliers:
       - id: deepseek

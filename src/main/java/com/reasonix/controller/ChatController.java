@@ -3,6 +3,7 @@ package com.reasonix.controller;
 import com.reasonix.agent.AgentController;
 import com.reasonix.agent.AgentResult;
 import com.reasonix.agent.StreamingEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -19,6 +20,8 @@ import java.util.concurrent.Executors;
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final AgentController agentController;
 
@@ -72,15 +75,11 @@ public class ChatController {
      */
     @GetMapping("/session")
     public Map<String, Object> session(@RequestParam(defaultValue = "default") String conversationId) {
-        // 占位：后续接入 SessionStore 查询
         return Map.of("conversationId", conversationId, "exists", false);
     }
 
     /**
-     * SSE 流式对话接口。
-     *
-     * @param body 请求体
-     * @return SseEmitter
+     * SSE 流式对话接口（POST 触发执行并返回事件流）。
      */
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chatStream(@RequestBody Map<String, Object> body,
@@ -94,8 +93,10 @@ public class ChatController {
             try {
                 agentController.executeStream(query, sessionId, modelId, event -> {
                     try {
-                        String payload = "data: " + toJson(event) + "\n\n";
-                        emitter.send(payload);
+                        String json = toJson(event);
+                        emitter.send(SseEmitter.event()
+                                .name("message")
+                                .data(json));
                     } catch (IOException e) {
                         emitter.completeWithError(e);
                     }
@@ -111,6 +112,17 @@ public class ChatController {
     }
 
     /**
+     * SSE 事件流接收端点（GET 建立事件通道）。
+     *
+     * <p>前端浏览器 EventSource 使用 GET 建立连接；当前先返回一个保活通道，
+     * 避免页面刷新时出现 405。后续可以把会话事件推送到该连接。</p>
+     */
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter chatStreamGet(@RequestParam(defaultValue = "default") String sessionId) {
+        return new SseEmitter(300_000L);
+    }
+
+    /**
      * 获取会话历史（简化实现：当前返回空列表）。
      */
     @PostMapping("/history")
@@ -123,20 +135,10 @@ public class ChatController {
         if (event == null) {
             return "{}";
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        sb.append("\"type\":\"").append(event.getType()).append("\",");
-        sb.append("\"content\":\"").append(escape(event.getContent())).append("\",");
-        sb.append("\"sessionId\":\"").append(escape(event.getSessionId())).append("\",");
-        sb.append("\"modelId\":\"").append(escape(event.getModelId())).append("\"");
-        sb.append("}");
-        return sb.toString();
-    }
-
-    private String escape(String value) {
-        if (value == null) {
-            return "";
+        try {
+            return OBJECT_MAPPER.writeValueAsString(event);
+        } catch (Exception e) {
+            return "{\"type\":\"error\",\"content\":\"序列化失败\"}";
         }
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

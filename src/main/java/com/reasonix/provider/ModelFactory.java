@@ -12,27 +12,33 @@ import org.springframework.stereotype.Component;
 public class ModelFactory {
 
     private final ModelRegistry modelRegistry;
+    private final ReasonixConfig reasonixConfig;
 
-    public ModelFactory(ModelRegistry modelRegistry) {
+    public ModelFactory(ModelRegistry modelRegistry, ReasonixConfig reasonixConfig) {
         this.modelRegistry = modelRegistry;
+        this.reasonixConfig = reasonixConfig;
     }
 
     /**
      * 根据模型 ID 创建 {@link ChatModel}。
-     *
-     * <p>当前版本仅提供基础抽象与占位实现；后续将接入真实 HTTP 调用。
      */
     public ChatModel createChatModel(String modelId) {
-        modelRegistry.getModel(modelId).orElseThrow(() ->
-                new IllegalArgumentException("未找到模型定义: " + modelId));
-        // 占位：返回基于 modelId 的适配器
-        return new OpenAiCompatibleChatModel(modelId);
+        ReasonixConfig.ProviderProperties.ModelDef modelDef = modelRegistry.getModel(modelId)
+                .orElseThrow(() -> new IllegalArgumentException("未找到模型定义: " + modelId));
+
+        ReasonixConfig.ProviderProperties.SupplierDef supplierDef = modelRegistry.getSupplier(modelDef.getSupplierId())
+                .orElseThrow(() -> new IllegalArgumentException("未找到供应商定义: " + modelDef.getSupplierId()));
+
+        return new OpenAiCompatibleChatModel(
+                modelId,
+                modelDef.getModelName(),
+                supplierDef.getBaseUrl(),
+                supplierDef.getApiKey()
+        );
     }
 
     /**
      * 根据模型 ID 创建 {@link EmbeddingModel}。
-     *
-     * <p>当前版本仅提供基础抽象与占位实现；后续将接入真实 HTTP 调用。
      */
     public EmbeddingModel createEmbeddingModel(String modelId) {
         // 占位：返回内存 Embedding 实现

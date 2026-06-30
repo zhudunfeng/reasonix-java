@@ -34,16 +34,17 @@ public class ProviderConfig {
             defaultModel = "default";
         }
 
-        // 确保默认模型已注册到 ModelRegistry，避免启动时序导致找不到模型定义
+        // 确保默认模型及供应商信息已注册到 ModelRegistry，避免启动时序导致找不到定义
         if (modelRegistry.getModel(defaultModel).isEmpty() && reasonixConfig.getProvider() != null) {
             reasonixConfig.getProvider().getModels().forEach(modelRegistry::register);
+            reasonixConfig.getProvider().getSuppliers().forEach(modelRegistry::register);
         }
 
         try {
             return modelFactory.createChatModel(defaultModel);
         } catch (IllegalArgumentException ex) {
             // 配置中未找到模型定义时，回退到最小占位实现，避免启动失败
-            return new OpenAiCompatibleChatModel(defaultModel);
+            return new OpenAiCompatibleChatModel(defaultModel, defaultModel, "", "");
         }
     }
 
