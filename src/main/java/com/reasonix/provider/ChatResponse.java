@@ -1,6 +1,7 @@
 package com.reasonix.provider;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 对话响应 DTO。
@@ -12,9 +13,9 @@ public class ChatResponse {
     private final String content;
     private final List<ToolCall> toolCalls;
     private final String finishReason;
-    private final Usage usage;
+    private final Map<String, Object> usage;
 
-    public ChatResponse(String content, List<ToolCall> toolCalls, String finishReason, Usage usage) {
+    public ChatResponse(String content, List<ToolCall> toolCalls, String finishReason, Map<String, Object> usage) {
         this.content = content;
         this.toolCalls = toolCalls;
         this.finishReason = finishReason;
@@ -33,7 +34,7 @@ public class ChatResponse {
         return finishReason;
     }
 
-    public Usage getUsage() {
+    public Map<String, Object> getUsage() {
         return usage;
     }
 }

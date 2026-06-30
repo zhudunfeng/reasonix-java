@@ -40,12 +40,10 @@ public class ProviderConfig {
             reasonixConfig.getProvider().getSuppliers().forEach(modelRegistry::register);
         }
 
-        try {
-            return modelFactory.createChatModel(defaultModel);
-        } catch (IllegalArgumentException ex) {
-            // 配置中未找到模型定义时，回退到最小占位实现，避免启动失败
-            return new OpenAiCompatibleChatModel(defaultModel, defaultModel, "", "");
-        }
+        ChatModel chatModel = modelFactory.createChatModel(defaultModel);
+        System.out.println("[Reasonix] chatModel instance=" + chatModel
+                + ", class=" + chatModel.getClass().getName());
+        return chatModel;
     }
 
     private String resolveDefaultModel() {

@@ -48,7 +48,7 @@ reasonix:
         enabled: true
       - id: stepfun-3.7-flash
         supplier-id: stepfun
-        model-name: step-3.7-flash
+        model-name: stepfun-3.7-flash
         stream: true
         enabled: true
       - id: ollama-llama3.2

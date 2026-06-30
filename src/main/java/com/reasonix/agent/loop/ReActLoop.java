@@ -71,6 +71,8 @@ public class ReActLoop {
         String lastContent = query;
         String toolSchemasJson = toolRegistry.getToolSchemasJson();
 
+        String finalAnswer = null;
+
         for (int step = 0; step < maxSteps; step++) {
             if (listener != null) {
                 listener.onEvent(StreamingEvent.builder(StreamingEventType.THINK)
@@ -105,6 +107,7 @@ public class ReActLoop {
             if (toolCalls.isEmpty()) {
                 // 无工具调用，直接返回文本结果
                 lastContent = content;
+                finalAnswer = content;
                 session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.ASSISTANT, content));
                 break;
             }
@@ -201,7 +204,7 @@ public class ReActLoop {
         }
 
         sessionStore.save(session);
-        return lastContent;
+        return finalAnswer != null ? finalAnswer : lastContent;
     }
 
     private List<com.reasonix.provider.ChatMessage> buildPrompt(Session session, String toolSchemasJson) {

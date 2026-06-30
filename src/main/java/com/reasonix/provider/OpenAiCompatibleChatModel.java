@@ -1,16 +1,15 @@
 package com.reasonix.provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 /**
  * OpenAI 兼容适配器实现。
@@ -50,7 +49,11 @@ public class OpenAiCompatibleChatModel implements ChatModel {
                     modelName != null && !modelName.isBlank() ? modelName : modelId,
                     String.join("、", missing)
             );
-            return new ChatResponse(message, List.of(), "stop", new Usage(0, 0, 0));
+            return new ChatResponse(message, List.of(), "stop", Map.of(
+                    "prompt_tokens", 0,
+                    "completion_tokens", 0,
+                    "total_tokens", 0
+            ));
         }
 
         try {
@@ -85,14 +88,22 @@ public class OpenAiCompatibleChatModel implements ChatModel {
                         "[HTTP 错误] status=" + response.statusCode() + " body=" + response.body(),
                         List.of(),
                         "error",
-                        new Usage(0, 0, 0)
+                        Map.of(
+                                "prompt_tokens", 0,
+                                "completion_tokens", 0,
+                                "total_tokens", 0
+                        )
                 );
             }
 
             Map<String, Object> responseBody = OBJECT_MAPPER.readValue(response.body(), Map.class);
             List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
             if (choices == null || choices.isEmpty()) {
-                return new ChatResponse("[空响应] 模型未返回内容", List.of(), "stop", new Usage(0, 0, 0));
+                return new ChatResponse("[空响应] 模型未返回内容", List.of(), "stop", Map.of(
+                        "prompt_tokens", 0,
+                        "completion_tokens", 0,
+                        "total_tokens", 0
+                ));
             }
 
             Map<String, Object> firstChoice = choices.get(0);
@@ -109,7 +120,11 @@ public class OpenAiCompatibleChatModel implements ChatModel {
                     content != null ? content : "",
                     List.of(),
                     finishReason != null ? finishReason : "stop",
-                    new Usage(promptTokens, completionTokens, totalTokens)
+                    Map.of(
+                            "prompt_tokens", promptTokens,
+                            "completion_tokens", completionTokens,
+                            "total_tokens", totalTokens
+                    )
             );
 
         } catch (Exception e) {
@@ -117,7 +132,11 @@ public class OpenAiCompatibleChatModel implements ChatModel {
                     "[调用异常] " + e.getMessage(),
                     List.of(),
                     "error",
-                    new Usage(0, 0, 0)
+                    Map.of(
+                            "prompt_tokens", 0,
+                            "completion_tokens", 0,
+                            "total_tokens", 0
+                    )
             );
         }
     }
