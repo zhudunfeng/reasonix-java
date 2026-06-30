@@ -84,11 +84,14 @@ public class AgentController {
                     .modelId(modelId != null ? modelId : reasonixConfig.getDefaultModel())
                     .build());
 
+            AuditStreamingEventListener auditListener = new AuditStreamingEventListener();
+
             StreamingEventListener forwardingListener = event -> {
-                onEvent.accept(event);
+                auditListener.onEvent(event);
                 if (listener != null) {
                     listener.onEvent(event);
                 }
+                onEvent.accept(event);
             };
 
             String result = reactLoop.execute(
