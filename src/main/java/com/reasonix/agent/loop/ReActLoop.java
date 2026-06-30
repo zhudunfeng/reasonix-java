@@ -218,6 +218,12 @@ public class ReActLoop {
         system.append("You are Reasonix Java Agent.");
         if (toolSchemasJson != null && !toolSchemasJson.isBlank() && !"[]".equals(toolSchemasJson)) {
             system.append("\n\nAvailable tools:\n").append(toolSchemasJson);
+            system.append(
+                    "\n\n【重要】调用工具时，禁止将 <tool_call> XML 标签或自然语言混入回复。\n" +
+                    "工具调用必须且只能返回合法 JSON 格式：\n" +
+                    "  {\"toolCalls\": [{\"tool\": \"工具名\", \"arguments\": {\"key\": \"value\"}}]}\n" +
+                    "若无工具调用，请直接以自然语言回复最终答案，不要输出任何 XML 标签。"
+            );
         }
         prompt.add(new com.reasonix.provider.ChatMessage(com.reasonix.provider.ChatMessage.Role.SYSTEM, system.toString()));
         for (com.reasonix.agent.model.ChatMessage historyMessage : session.getHistory()) {
