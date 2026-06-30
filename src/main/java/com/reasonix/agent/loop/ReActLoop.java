@@ -1,5 +1,8 @@
 package com.reasonix.agent.loop;
 
+import com.reasonix.agent.StreamingEvent;
+import com.reasonix.agent.StreamingEventListener;
+import com.reasonix.agent.StreamingEventType;
 import com.reasonix.agent.model.Session;
 import com.reasonix.agent.store.SessionStore;
 import com.reasonix.config.ReasonixConfig;
@@ -54,6 +57,13 @@ public class ReActLoop {
      * @return 最终响应内容
      */
     public String execute(String sessionId, String query) {
+        return execute(sessionId, query, null);
+    }
+
+    /**
+     * 执行一次 ReAct 循环，并可选推送流式事件。
+     */
+    public String execute(String sessionId, String query, StreamingEventListener listener) {
         Session session = sessionStore.get(sessionId).orElseGet(() -> sessionStore.create(sessionId));
         session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.USER, query));
 
@@ -62,6 +72,14 @@ public class ReActLoop {
         String toolSchemasJson = toolRegistry.getToolSchemasJson();
 
         for (int step = 0; step < maxSteps; step++) {
+            if (listener != null) {
+                listener.onEvent(StreamingEvent.builder(StreamingEventType.THINK)
+                        .sessionId(sessionId)
+                        .modelId(session.getModelId() != null ? session.getModelId() : reasonixConfig.getDefaultModel())
+                        .content("第 " + (step + 1) + " 轮思考开始")
+                        .build());
+            }
+
             List<com.reasonix.provider.ChatMessage> prompt = buildPrompt(session, toolSchemasJson);
             ChatRequest request = new ChatRequest(
                     session.getModelId() != null ? session.getModelId() : reasonixConfig.getDefaultModel(),
@@ -73,6 +91,14 @@ public class ReActLoop {
 
             ChatResponse response = chatModel.chat(request);
             String content = response.getContent() != null ? response.getContent() : "";
+
+            if (listener != null) {
+                listener.onEvent(StreamingEvent.builder(StreamingEventType.CHUNK)
+                        .sessionId(sessionId)
+                        .modelId(session.getModelId() != null ? session.getModelId() : reasonixConfig.getDefaultModel())
+                        .content(content)
+                        .build());
+            }
 
             // 解析工具调用
             List<ToolCall> toolCalls = toolCallParser.parse(content, toolSchemasJson);
@@ -90,6 +116,17 @@ public class ReActLoop {
             List<String> toolResults = new ArrayList<>();
             for (ToolCall toolCall : toolCalls) {
                 String toolName = toolCall.getToolName();
+
+                if (listener != null) {
+                    listener.onEvent(StreamingEvent.builder(StreamingEventType.TOOL_CALL)
+                            .sessionId(sessionId)
+                            .modelId(session.getModelId() != null ? session.getModelId() : reasonixConfig.getDefaultModel())
+                            .toolName(toolName)
+                            .arguments(toolCall.getArguments())
+                            .content("调用工具：" + toolName)
+                            .build());
+                }
+
                 Tool tool = toolRegistry.get(toolName);
 
                 if (tool == null) {
@@ -121,13 +158,33 @@ public class ReActLoop {
                 try {
                     ToolExecutionResult result = tool.execute(ctx, toolCall.getArguments());
                     long duration = System.currentTimeMillis() - start;
-                    if (result.isSuccess()) {
-                        toolResults.add("[" + toolName + " 输出] " + result.getOutput());
-                    } else {
-                        toolResults.add("[" + toolName + " 失败] " + result.getError());
+                    String resultText = result.isSuccess()
+                            ? "[" + toolName + " 输出] " + result.getOutput()
+                            : "[" + toolName + " 失败] " + result.getError();
+                    toolResults.add(resultText);
+
+                    if (listener != null) {
+                        listener.onEvent(StreamingEvent.builder(StreamingEventType.TOOL_RESULT)
+                                .sessionId(sessionId)
+                                .modelId(session.getModelId() != null ? session.getModelId() : reasonixConfig.getDefaultModel())
+                                .toolName(toolName)
+                                .toolResult(resultText)
+                                .content(resultText)
+                                .build());
                     }
                 } catch (Exception e) {
-                    toolResults.add("[" + toolName + " 异常] " + e.getMessage());
+                    String errorText = "[" + toolName + " 异常] " + e.getMessage();
+                    toolResults.add(errorText);
+
+                    if (listener != null) {
+                        listener.onEvent(StreamingEvent.builder(StreamingEventType.TOOL_RESULT)
+                                .sessionId(sessionId)
+                                .modelId(session.getModelId() != null ? session.getModelId() : reasonixConfig.getDefaultModel())
+                                .toolName(toolName)
+                                .toolResult(errorText)
+                                .content(errorText)
+                                .build());
+                    }
                 }
             }
 

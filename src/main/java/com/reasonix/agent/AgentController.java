@@ -22,13 +22,15 @@ public class AgentController {
 
     /**
      * 同步执行 Agent 任务。
-     *
-     * @param query 用户查询
-     * @param sessionId 会话ID
-     * @param modelId 模型ID（可选）
-     * @return AgentResult 执行结果
      */
     public AgentResult execute(String query, String sessionId, String modelId) {
+        return execute(query, sessionId, modelId, null);
+    }
+
+    /**
+     * 同步执行 Agent 任务，并可选推送中间事件。
+     */
+    public AgentResult execute(String query, String sessionId, String modelId, StreamingEventListener listener) {
         if (query == null || query.isBlank()) {
             return AgentResult.builder().error("查询内容不能为空").build();
         }
@@ -36,7 +38,8 @@ public class AgentController {
         try {
             String result = reactLoop.execute(
                     sessionId != null ? sessionId : "default",
-                    query
+                    query,
+                    listener
             );
 
             return AgentResult.builder()
@@ -55,13 +58,22 @@ public class AgentController {
 
     /**
      * 流式执行。
-     *
-     * <p>当前为最小可用实现：发送 START/DONE/ERROR 事件；后续可改为真流式 token 推送。
      */
     public void executeStream(String query,
                               String sessionId,
                               String modelId,
                               java.util.function.Consumer<StreamingEvent> onEvent) {
+        executeStream(query, sessionId, modelId, onEvent, null);
+    }
+
+    /**
+     * 流式执行（支持中间事件监听）。
+     */
+    public void executeStream(String query,
+                              String sessionId,
+                              String modelId,
+                              java.util.function.Consumer<StreamingEvent> onEvent,
+                              StreamingEventListener listener) {
         if (onEvent == null) {
             return;
         }
@@ -72,22 +84,25 @@ public class AgentController {
                     .modelId(modelId != null ? modelId : reasonixConfig.getDefaultModel())
                     .build());
 
-            AgentResult result = execute(query, sessionId, modelId);
+            StreamingEventListener forwardingListener = event -> {
+                onEvent.accept(event);
+                if (listener != null) {
+                    listener.onEvent(event);
+                }
+            };
 
-            if (result.getError() != null) {
-                onEvent.accept(StreamingEvent.builder(StreamingEventType.ERROR)
-                        .sessionId(sessionId)
-                        .modelId(modelId)
-                        .errorMessage(result.getError())
-                        .build());
-            } else {
-                onEvent.accept(StreamingEvent.builder(StreamingEventType.DONE)
-                        .sessionId(sessionId)
-                        .modelId(modelId)
-                        .content(result.getContent())
-                        .compactTriggered(result.isCompactTriggered())
-                        .build());
-            }
+            String result = reactLoop.execute(
+                    sessionId != null ? sessionId : "default",
+                    query != null ? query : "",
+                    forwardingListener
+            );
+
+            onEvent.accept(StreamingEvent.builder(StreamingEventType.DONE)
+                    .sessionId(sessionId)
+                    .modelId(modelId)
+                    .content(result)
+                    .compactTriggered(false)
+                    .build());
         } catch (Exception e) {
             onEvent.accept(StreamingEvent.builder(StreamingEventType.ERROR)
                     .sessionId(sessionId)

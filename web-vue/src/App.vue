@@ -11,13 +11,33 @@
           <div class="bubble">
             <div class="role">{{ item.role }}</div>
 
-            <div v-if="item.reasoning" class="content reasoning">
-              <div class="reasoning-header" @click="toggleReasoning(item)">
-                <span>思考过程</span>
-                <span class="caret">{{ item.reasoningOpen ? '▲' : '▼' }}</span>
+            <template v-if="item.role === 'assistant'">
+              <div v-if="item.reasoning && item.reasoningOpen" class="content reasoning">
+                <div class="reasoning-header" @click="toggleReasoning(item)">
+                  <span>思考过程</span>
+                  <span class="caret">▲</span>
+                </div>
+                <div class="reasoning-body">{{ item.reasoning }}</div>
               </div>
-              <div v-if="item.reasoningOpen" class="reasoning-body">{{ item.reasoning }}</div>
-            </div>
+              <div v-else-if="item.reasoning && !item.reasoningOpen" class="content reasoning collapsed" @click="toggleReasoning(item)">
+                <div class="reasoning-header">
+                  <span>思考过程</span>
+                  <span class="caret">▼</span>
+                </div>
+              </div>
+
+              <div v-if="item.toolCalls && item.toolCalls.length" class="content tool-calls">
+                <div class="tool-call" v-for="tool in item.toolCalls" :key="tool.name">
+                  <div class="tool-name">{{ tool.name }}</div>
+                  <pre class="tool-args">{{ tool.arguments }}</pre>
+                </div>
+              </div>
+              <div v-if="item.toolResults && item.toolResults.length" class="content tool-results">
+                <div class="tool-result" v-for="(result, idx) in item.toolResults" :key="idx">
+                  {{ result }}
+                </div>
+              </div>
+            </template>
 
             <div v-if="item.content" class="content">{{ item.content }}</div>
           </div>
@@ -56,7 +76,15 @@ const API_BASE = '';
 const SSE_URL = `/api/chat/stream`;
 
 type Role = 'user' | 'assistant';
-type Message = { id: string; role: Role; content: string; reasoning?: string; reasoningOpen?: boolean };
+type Message = {
+  id: string;
+  role: Role;
+  content: string;
+  reasoning?: string;
+  reasoningOpen?: boolean;
+  toolCalls?: { name: string; arguments: string }[];
+  toolResults?: string[];
+};
 
 const input = ref('');
 const loading = ref(false);
@@ -77,7 +105,7 @@ async function send() {
     const res = await fetch(`${API_BASE}/api/chat/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: text, sessionId, method: 'Submit' }),
+      body: JSON.stringify({ query: text, sessionId }),
     });
     if (!res.ok) {
       const text = await res.text();
@@ -103,20 +131,36 @@ async function send() {
         const payload = trimmed.slice(5).trim();
         if (!payload) continue;
         try {
-          const data = JSON.parse(payload) as { type?: string; kind?: string; content?: string; errorMessage?: string; reasoning?: string };
-          if (!data) return;
-          const kind = String(data.kind ?? data.type ?? "").toLowerCase();
-          if (!kind || kind === "unknown") return;
+          const data = JSON.parse(payload) as {
+            type?: string;
+            kind?: string;
+            content?: string;
+            errorMessage?: string;
+            reasoning?: string;
+            toolName?: string;
+            arguments?: Record<string, unknown>;
+            toolResult?: string;
+          };
+          if (!data) continue;
+          const kind = String(data.kind ?? data.type ?? '').toLowerCase();
+          if (!kind || kind === 'unknown') continue;
           const id = ensureAssistantBubble();
           if (kind === 'error') {
             appendAssistantText(id, `\n[错误] ${data.errorMessage ?? '未知错误'}`);
           } else if (kind === 'start') {
             appendAssistantText(id, '');
+          } else if (kind === 'think') {
+            appendAssistantReasoning(id, data.content ?? '');
+          } else if (kind === 'chunk') {
+            appendAssistantText(id, data.content ?? '');
+            collapseLastReasoning(id);
+          } else if (kind === 'tool_call') {
+            appendAssistantToolCall(id, data.toolName ?? '', data.arguments ?? {});
+          } else if (kind === 'tool_result') {
+            appendAssistantToolResult(id, data.toolResult ?? data.content ?? '');
           } else if (kind === 'done' || kind === 'token') {
             appendAssistantText(id, data.content ?? '');
             collapseLastReasoning(id);
-          } else if (kind === 'reasoning' || kind === 'thinking') {
-            appendAssistantReasoning(id, data.reasoning ?? data.content ?? '');
           }
           await scrollToBottom();
         } catch {
@@ -164,6 +208,20 @@ function appendAssistantReasoning(id: string, text: string) {
   if (!target) return;
   target.reasoning = (target.reasoning ?? '') + text;
   target.reasoningOpen = true;
+}
+
+function appendAssistantToolCall(id: string, name: string, args: Record<string, unknown>) {
+  const target = items.value.find((it) => it.id === id);
+  if (!target) return;
+  target.toolCalls = target.toolCalls ?? [];
+  target.toolCalls.push({ name, arguments: JSON.stringify(args, null, 2) });
+}
+
+function appendAssistantToolResult(id: string, text: string) {
+  const target = items.value.find((it) => it.id === id);
+  if (!target) return;
+  target.toolResults = target.toolResults ?? [];
+  target.toolResults.push(text);
 }
 
 function collapseLastReasoning(id: string) {
@@ -373,5 +431,47 @@ body {
   margin-top: 6px;
   opacity: 0.85;
   white-space: pre-wrap;
+}
+
+.collapsed .reasoning-body {
+  display: none;
+}
+
+.tool-calls {
+  margin-bottom: 8px;
+}
+
+.tool-call {
+  background: #1f2040;
+  border: 1px solid #34345a;
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+
+.tool-name {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+
+.tool-args {
+  margin: 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.tool-results {
+  margin-bottom: 8px;
+}
+
+.tool-result {
+  background: #1b1b32;
+  border: 1px solid #2f356b;
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  white-space: pre-wrap;
+  font-size: 13px;
 }
 </style>
