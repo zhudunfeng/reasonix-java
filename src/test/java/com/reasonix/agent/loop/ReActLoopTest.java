@@ -80,8 +80,8 @@ class ReActLoopTest {
                 .thenReturn(chatResponse2);
 
         // toolCallParser 仅在第一轮解析成功
-        when(toolCallParser.parse(rawResponse1, anyString())).thenReturn(toolCalls);
-        when(toolCallParser.parse(finalAnswer, anyString())).thenReturn(List.of());
+        when(toolCallParser.parse(eq(rawResponse1), anyString())).thenReturn(toolCalls);
+        when(toolCallParser.parse(eq(finalAnswer), anyString())).thenReturn(List.of());
 
         // toolRegistry 返回两个 mock 工具
         Tool tool1 = mock(Tool.class);

@@ -11,6 +11,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 工具调用解析器。
  *
@@ -23,7 +26,27 @@ import java.util.regex.Pattern;
 @Component
 public class ToolCallParser {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ToolCallParser.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    /**
+     * 匹配 [tool_use] ... [/tool_use] 整块。
+     * 预编译为静态常量，避免每次调用重新编译正则。
+     */
+    private static final Pattern BLOCK_PATTERN = Pattern.compile("\\[tool_use\\](.*?)\\[/tool_use\\]", Pattern.DOTALL);
+
+    /**
+     * 提取 function= 工具名。
+     */
+    private static final Pattern NAME_PATTERN = Pattern.compile("function=(\\S+)");
+
+    /**
+     * 提取所有 parameter=key ... /parameter 参数块。
+     *
+     * <p>【关键修复】使用前瞻断言 {@code (?=/parameter\b|$)} 替代 {@code (?:/parameter|$)},
+     * 防止贪婪匹配吞噬后续参数块的结束标签，确保多行参数值能正确解析。</p>
+     */
+    private static final Pattern PARAM_PATTERN = Pattern.compile("parameter=(\\S+)\\s*([\\s\\S]*?)(?=/parameter\\b|$)");
 
     /**
      * 从模型返回内容里解析工具调用。
@@ -33,23 +56,37 @@ public class ToolCallParser {
      * @return 解析后的工具调用列表；无调用则返回空列表
      */
     public List<ToolCall> parse(String content, String schemasJson) {
+        return parseWithDiagnostics(content, schemasJson).toolCalls();
+    }
+
+    /**
+     * 从模型返回内容里解析工具调用，同时携带解析来源诊断信息。
+     *
+     * <p>调用方（如 {@code ReActLoop}）可通过 {@link ToolCallParseResult#parsedFromJson()}
+     * 区分 JSON 解析成功 vs XML fallback，以便推送更丰富的流式事件。</p>
+     *
+     * @param content     模型返回文本
+     * @param schemasJson 当前注册工具 schema 的 JSON（占位，用于后续校验）
+     * @return 解析结果；无调用则返回 {@link ToolCallParseResult#empty()}
+     */
+    public ToolCallParseResult parseWithDiagnostics(String content, String schemasJson) {
         if (content == null || content.isBlank()) {
-            return List.of();
+            return ToolCallParseResult.empty();
         }
 
         // 1. 优先尝试 JSON 解析
         List<ToolCall> fromJson = tryParseJson(content);
         if (!fromJson.isEmpty()) {
-            return fromJson;
+            return ToolCallParseResult.fromJson(fromJson);
         }
 
         // 2. JSON 无结果（解析失败或内容不包含工具调用），降级 XML fallback
         List<ToolCall> fromXml = parseToolCallXml(content);
         if (!fromXml.isEmpty()) {
-            return fromXml;
+            return ToolCallParseResult.fromXml(fromXml);
         }
 
-        return List.of();
+        return ToolCallParseResult.empty();
     }
 
     /**
@@ -170,34 +207,35 @@ public class ToolCallParser {
     private List<ToolCall> parseToolCallXml(String content) {
         List<ToolCall> calls = new ArrayList<>();
 
-        // 匹配 [tool_use] ... [/tool_use] 整块
-        Pattern blockPattern = Pattern.compile("\\[tool_use\\](.*?)\\[/tool_use\\]", Pattern.DOTALL);
-        Matcher blockMatcher = blockPattern.matcher(content);
+        LOG.debug("尝试 XML fallback 解析 tool_use 标签，content 长度：{}", content.length());
+
+        Matcher blockMatcher = BLOCK_PATTERN.matcher(content);
         while (blockMatcher.find()) {
             String block = blockMatcher.group(1);
+            LOG.debug("匹配到 tool_use 块，内容预览：{}", block.substring(0, Math.min(block.length(), 80)));
 
             // 提取 function= 工具名
             String toolName = "";
-            Pattern namePattern = Pattern.compile("function=(\\S+)");
-            Matcher nameMatcher = namePattern.matcher(block);
+            Matcher nameMatcher = NAME_PATTERN.matcher(block);
             if (nameMatcher.find()) {
                 toolName = nameMatcher.group(1).trim();
             }
 
             if (toolName.isBlank()) {
+                LOG.debug("tool_use 块未匹配到工具名，跳过");
                 continue;
             }
 
             Map<String, Object> args = new LinkedHashMap<>();
 
             // 提取所有 parameter=key ... /parameter 块
-            Pattern paramPattern = Pattern.compile("parameter=(\\S+)\\s*(.*?)(?:/parameter|$)", Pattern.DOTALL);
-            Matcher paramMatcher = paramPattern.matcher(block);
+            Matcher paramMatcher = PARAM_PATTERN.matcher(block);
             while (paramMatcher.find()) {
                 String key = paramMatcher.group(1).trim();
                 String value = paramMatcher.group(2).trim();
                 if (!key.isBlank()) {
                     args.put(key, value);
+                    LOG.debug("解析参数：{} = {}", key, value.substring(0, Math.min(value.length(), 60)));
                 }
             }
 
@@ -206,8 +244,10 @@ public class ToolCallParser {
                 args.put("text", block.trim());
             }
 
+            LOG.debug("解析完成：工具={}，参数数量={}", toolName, args.size());
             calls.add(new ToolCall(toolName, args));
         }
+        LOG.debug("XML fallback 解析结束，共解析 {} 个工具调用", calls.size());
         return calls;
     }
 }

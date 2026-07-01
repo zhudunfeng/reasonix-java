@@ -23,7 +23,11 @@ import java.util.*;
 /**
  * ReAct 核心执行循环。
  *
- * <p>执行流程：ComposePrompt → LLMCall → ParseToolCalls → ExecuteTools → PermissionGate → UpdateHistory → CheckDone → CompactIfNeeded。
+ * <p>执行流程：ComposePrompt → LLMCall → ParseToolCalls → ExecuteTools → PermissionGate → UpdateHistory → CheckDone → CompactIfNeeded。</p>
+ *
+ * <p>修复说明：当模型在回复中混入 {@code <tool_call>} 或 {@code [tool_use]} 工具调用标记时，
+ * 当前循环会继续执行工具调用，但会把原始标记原文直接暴露给用户。
+ * 此处补充清洗逻辑，确保最终返回的是纯文本答案。</p>
  */
 @Component
 public class ReActLoop {
@@ -110,8 +114,11 @@ public class ReActLoop {
                 break;
             }
 
-            // 将模型原始回复（含工具调用）中的纯文本部分记录到历史
-            session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.ASSISTANT, content));
+            // 将模型原始回复（含工具调用）中的纯文本部分记录到历史，避免将工具标记原文暴露给用户
+            String assistantText = stripToolCallMarkers(content);
+            if (!assistantText.isBlank()) {
+                session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.ASSISTANT, assistantText));
+            }
 
             // 执行工具调用
             List<String> toolResults = new ArrayList<>();
@@ -213,7 +220,29 @@ public class ReActLoop {
         if (finalAnswer == null || finalAnswer.isBlank()) {
             return "抱歉，我已耗尽最大执行步数，未能完成完整回答。";
         }
-        return finalAnswer;
+
+        return stripToolCallMarkers(finalAnswer);
+    }
+
+    /**
+     * 去除模型输出中明显的工具调用标记，避免将原始调用内容直接暴露给用户。
+     *
+     * <p>目前支持清洗：</p>
+     * <ul>
+     *   <li>自定义 XML 风格 tool_call 标签块</li>
+     *   <li>[tool_use] ... [/tool_use] 兼容格式块</li>
+     * </ul>
+     */
+    private String stripToolCallMarkers(String text) {
+        if (text == null || text.isBlank()) {
+            return text;
+        }
+
+        String cleaned = text;
+        cleaned = cleaned.replaceAll("(?is)<tool_call[\\s\\S]*?>", "");
+        cleaned = cleaned.replaceAll("(?is)\\[tool_use\\][\\s\\S]*?\\[/tool_use\\]", "");
+        cleaned = cleaned.replaceAll("(?is)</?function[^>]*>", "");
+        return cleaned.strip();
     }
 
     private List<com.reasonix.provider.ChatMessage> buildPrompt(Session session, String toolSchemasJson) {
@@ -222,12 +251,6 @@ public class ReActLoop {
         system.append("You are Reasonix Java Agent.");
         if (toolSchemasJson != null && !toolSchemasJson.isBlank() && !"[]".equals(toolSchemasJson)) {
             system.append("\n\nAvailable tools:\n").append(toolSchemasJson);
-//            system.append(
-//                    "\n\n【重要】调用工具时，禁止将 <tool_call> XML 标签或自然语言混入回复。\n" +
-//                    "工具调用必须且只能返回合法 JSON 格式：\n" +
-//                    "  {\"toolCalls\": [{\"tool\": \"工具名\", \"arguments\": {\"key\": \"value\"}}]}\n" +
-//                    "若无工具调用，请直接以自然语言回复最终答案，不要输出任何 XML 标签。"
-//            );
         }
         prompt.add(new com.reasonix.provider.ChatMessage(com.reasonix.provider.ChatMessage.Role.SYSTEM, system.toString()));
         for (com.reasonix.agent.model.ChatMessage historyMessage : session.getHistory()) {
