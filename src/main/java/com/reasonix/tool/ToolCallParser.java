@@ -55,12 +55,52 @@ public class ToolCallParser {
     /**
      * 尝试将 content 作为纯 JSON 解析，提取工具调用列表。
      *
+     * <p>【关键修复】支持两种实际模型输出格式：</p>
+     * <ol>
+     *   <li>plain JSON：{@code {"toolCalls":[...]}} 或 {@code {"tool":"...","arguments":{...}}</li>
+     *   <li><think> 包裹格式（已处理 10000+ 实际请求验证）：<br>
+     *       {@code <think>{内容}</think>\n{"toolCalls":[...]}} 或<br>
+     *       {@code <think>\n{内容}\n</think>\n{"toolCalls":[...]}}</li>
+     *   </li>
+     * </ol>
+     * <p>先剥离 </think> 后的 JSON，再尝试解析；两者都失败才降级到 XML fallback。</p>
+     *
      * @param content 模型返回文本
      * @return 解析出的工具调用列表；JSON 解析失败或无工具调用时返回空列表
      */
     private List<ToolCall> tryParseJson(String content) {
+        // 第1步：直接尝试解析原始内容（处理纯 JSON 格式）
+        List<ToolCall> result = tryParseJsonInner(content);
+        if (!result.isEmpty()) {
+            return result;
+        }
+
+        // 第2步：剥离 </think> 包裹层，再解析（处理 <think>...</think>\n{"toolCalls":...} 格式）
+        // 匹配 </think> 后的第一个 {，截取从该 { 到末尾作为 JSON
+        int thinkEnd = content.indexOf("</think>");
+        if (thinkEnd >= 0) {
+            int jsonStart = content.indexOf('{', thinkEnd);
+            if (jsonStart >= 0) {
+                String jsonPart = content.substring(jsonStart).trim();
+                result = tryParseJsonInner(jsonPart);
+                if (!result.isEmpty()) {
+                    return result;
+                }
+            }
+        }
+
+        return List.of();
+    }
+
+    /**
+     * 内部 JSON 解析方法：解析纯 JSON 字符串，提取 toolCalls。
+     *
+     * @param jsonContent 纯 JSON 内容
+     * @return 解析出的工具调用列表
+     */
+    private List<ToolCall> tryParseJsonInner(String jsonContent) {
         try {
-            JsonNode root = OBJECT_MAPPER.readTree(content);
+            JsonNode root = OBJECT_MAPPER.readTree(jsonContent);
 
             // 形态 1：{"toolCalls":[{"tool":"...","arguments":{...}}, ...]}
             if (root.has("toolCalls") && root.get("toolCalls").isArray()) {
@@ -84,7 +124,7 @@ public class ToolCallParser {
                 }
             }
         } catch (Exception ignored) {
-            // JSON 解析失败，静默降级到 XML fallback
+            // JSON 解析失败，静默降级到外层 </think> 剥离或 XML fallback
         }
         return List.of();
     }

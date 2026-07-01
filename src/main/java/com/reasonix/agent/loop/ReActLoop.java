@@ -68,7 +68,6 @@ public class ReActLoop {
         session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.USER, query));
 
         int maxSteps = reasonixConfig.getMaxSteps() > 0 ? reasonixConfig.getMaxSteps() : 8;
-        String lastContent = query;
         String toolSchemasJson = toolRegistry.getToolSchemasJson();
 
         String finalAnswer = null;
@@ -106,7 +105,6 @@ public class ReActLoop {
             List<ToolCall> toolCalls = toolCallParser.parse(content, toolSchemasJson);
             if (toolCalls.isEmpty()) {
                 // 无工具调用，直接返回文本结果
-                lastContent = content;
                 finalAnswer = content;
                 session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.ASSISTANT, content));
                 break;
@@ -196,10 +194,12 @@ public class ReActLoop {
             session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.TOOL, toolResultText));
 
             // 继续下一轮，让模型根据工具结果生成最终回复
-            lastContent = toolResultText;
 
-            // 本轮执行了工具调用，不应将含工具的原始回复误作为最终答案
-            // 让最后一轮（toolCalls.isEmpty() 分支）来赋值 finalAnswer
+            // 修复：如果这是最后一轮（maxSteps 已用完）且 toolCalls 不为空，
+            // 将当前 LLM 的 content 作为 finalAnswer，避免 DONE 携带工具结果串。
+            if (step == maxSteps - 1 && finalAnswer == null) {
+                finalAnswer = content.trim();
+            }
         }
 
         if (shouldCompact(session)) {
@@ -207,9 +207,13 @@ public class ReActLoop {
         }
 
         sessionStore.save(session);
+
         // 若因 maxSteps 用完而退出循环（finalAnswer 仍为 null），
-        // 返回 lastContent（即最后一轮模型回复或工具输出），保证不返回 null
-        return finalAnswer != null ? finalAnswer : (lastContent != null ? lastContent : "");
+        // 返回友好提示而非工具结果串
+        if (finalAnswer == null || finalAnswer.isBlank()) {
+            return "抱歉，我已耗尽最大执行步数，未能完成完整回答。";
+        }
+        return finalAnswer;
     }
 
     private List<com.reasonix.provider.ChatMessage> buildPrompt(Session session, String toolSchemasJson) {
@@ -218,12 +222,12 @@ public class ReActLoop {
         system.append("You are Reasonix Java Agent.");
         if (toolSchemasJson != null && !toolSchemasJson.isBlank() && !"[]".equals(toolSchemasJson)) {
             system.append("\n\nAvailable tools:\n").append(toolSchemasJson);
-            system.append(
-                    "\n\n【重要】调用工具时，禁止将 <tool_call> XML 标签或自然语言混入回复。\n" +
-                    "工具调用必须且只能返回合法 JSON 格式：\n" +
-                    "  {\"toolCalls\": [{\"tool\": \"工具名\", \"arguments\": {\"key\": \"value\"}}]}\n" +
-                    "若无工具调用，请直接以自然语言回复最终答案，不要输出任何 XML 标签。"
-            );
+//            system.append(
+//                    "\n\n【重要】调用工具时，禁止将 <tool_call> XML 标签或自然语言混入回复。\n" +
+//                    "工具调用必须且只能返回合法 JSON 格式：\n" +
+//                    "  {\"toolCalls\": [{\"tool\": \"工具名\", \"arguments\": {\"key\": \"value\"}}]}\n" +
+//                    "若无工具调用，请直接以自然语言回复最终答案，不要输出任何 XML 标签。"
+//            );
         }
         prompt.add(new com.reasonix.provider.ChatMessage(com.reasonix.provider.ChatMessage.Role.SYSTEM, system.toString()));
         for (com.reasonix.agent.model.ChatMessage historyMessage : session.getHistory()) {

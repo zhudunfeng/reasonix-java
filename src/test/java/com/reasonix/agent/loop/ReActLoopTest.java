@@ -56,7 +56,19 @@ class ReActLoopTest {
 
         // ---- 模拟第一轮：模型返回工具调用 ----
         String rawResponse1 = buildRawJsonWithToolCalls(toolCalls);
-        ChatResponse chatResponse1 = new ChatResponse(rawResponse1, toolCalls, "tool_calls", Map.of());
+        // 将 tool.ToolCall 映射为 provider.ToolCall（字段名不同：toolName→name, arguments→arguments）
+        ChatResponse chatResponse1 = new ChatResponse(
+                rawResponse1,
+                toolCalls.stream()
+                        .map(c -> new com.reasonix.provider.ToolCall(
+                                null,
+                                c.getToolName(),
+                                c.getArguments() != null ? c.getArguments().toString() : null
+                        ))
+                        .toList(),
+                "tool_calls",
+                Map.of()
+        );
 
         // ---- 模拟第二轮：模型返回纯文本最终回复 ----
         String finalAnswer = "最终答复：这是基于工具结果的回答。";
@@ -85,7 +97,7 @@ class ReActLoopTest {
 
         // permissionGate 全部允许
         when(permissionGate.check(anyString(), any(Map.class), anyString()))
-                .thenReturn(new PermissionGate.Result(PermissionGate.Decision.ALLOW, null));
+                .thenReturn(new PermissionGate.Result(PermissionGate.Decision.ALLOWED, null));
 
         // toolSchemasJson 不为空
         when(toolRegistry.getToolSchemasJson()).thenReturn("[]");
