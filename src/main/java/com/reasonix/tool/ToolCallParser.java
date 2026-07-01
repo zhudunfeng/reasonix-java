@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * <p>支持两种解析形态（按优先级）：</p>
  * <ol>
  *   <li>LLM 返回标准 JSON：{@code {"toolCalls":[...]}} 或 {@code {"tool":"...","arguments":{...}}}</li>
- *   <li>Fallback：解析 tool_use XML 标签格式（兼容模型混入自然语言场景）</li>
+ *   <li>Fallback：解析 <tool_call> XML 标签格式（兼容模型混入自然语言场景）</li>
  * </ol>
  */
 @Component
@@ -30,10 +30,10 @@ public class ToolCallParser {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
-     * 匹配 [tool_use] ... [/tool_use] 整块。
+     * 匹配 <tool_call>...</tool_call> 整块。
      * 预编译为静态常量，避免每次调用重新编译正则。
      */
-    private static final Pattern BLOCK_PATTERN = Pattern.compile("\\[tool_use\\](.*?)\\[/tool_use\\]", Pattern.DOTALL);
+    private static final Pattern BLOCK_PATTERN = Pattern.compile("<tool_call>(.*?)</tool_call>", Pattern.DOTALL);
 
     /**
      * 提取 function= 工具名。
