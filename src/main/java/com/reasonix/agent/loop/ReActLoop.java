@@ -128,7 +128,8 @@ public class ReActLoop {
                     payload.put("arguments", toolCall.getArguments() != null ? toolCall.getArguments() : Map.of());
                     toolUseMessages.add(new com.reasonix.agent.model.ChatMessage(
                             com.reasonix.agent.model.ChatMessage.Role.ASSISTANT,
-                            safeJson(assistantText) + "\n[tool_use]\n" + safeJson(payload) + "\n[/tool_use]"
+                            safeJson(assistantText) + "\n[tool_use]\n" + safeJson(payload) + "\n[/tool_use]",
+                            toolCall.getToolCallId()
                     ));
                 }
                 session.getHistory().addAll(toolUseMessages);
@@ -206,7 +207,7 @@ public class ReActLoop {
 
         List<String> toolResults = new ArrayList<>(toolResultMap.values());
         String toolResultText = String.join("\n", toolResults);
-        session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.TOOL, toolResultText));
+        session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.TOOL, toolResultText, firstToolCallId(toolCalls)));
 
         boolean hasFailed = toolResults.stream().anyMatch(text ->
                 text.contains("失败]") || text.contains("异常]") || text.contains("未知工具")
@@ -364,7 +365,8 @@ public class ReActLoop {
                     // 回写 tool result，携带 tool_call_id，避免 provider 因 invalid tool message 报错
                     session.getHistory().add(new com.reasonix.agent.model.ChatMessage(
                             com.reasonix.agent.model.ChatMessage.Role.TOOL,
-                            "tool_call_id=" + toolCall.getToolCallId() + "\n" + roundResultMap.get(toolName)
+                            "tool_call_id=" + toolCall.getToolCallId() + "\n" + roundResultMap.get(toolName),
+                            toolCall.getToolCallId()
                     ));
 
                     if (listener != null) {
@@ -383,7 +385,8 @@ public class ReActLoop {
 
                     session.getHistory().add(new com.reasonix.agent.model.ChatMessage(
                             com.reasonix.agent.model.ChatMessage.Role.TOOL,
-                            "tool_call_id=" + toolCall.getToolCallId() + "\n" + roundResultMap.get(toolName)
+                            "tool_call_id=" + toolCall.getToolCallId() + "\n" + roundResultMap.get(toolName),
+                            toolCall.getToolCallId()
                     ));
 
                     if (listener != null) {
@@ -481,7 +484,8 @@ public class ReActLoop {
         for (com.reasonix.agent.model.ChatMessage historyMessage : session.getHistory()) {
             prompt.add(new com.reasonix.provider.ChatMessage(
                     com.reasonix.provider.ChatMessage.Role.valueOf(historyMessage.getRole().name()),
-                    historyMessage.getContent()
+                    historyMessage.getContent(),
+                    historyMessage.getToolCallId()
             ));
         }
         return prompt;
@@ -570,6 +574,14 @@ public class ReActLoop {
     private boolean shouldCompact(Session session) {
         int maxHistorySize = 64;
         return compactService.shouldCompact(session, maxHistorySize);
+    }
+
+    private String firstToolCallId(List<ToolCall> toolCalls) {
+        if (toolCalls == null || toolCalls.isEmpty()) {
+            return null;
+        }
+        ToolCall first = toolCalls.get(0);
+        return first != null ? first.getToolCallId() : null;
     }
 
     private String safeJson(Object value) {
