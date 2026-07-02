@@ -8,21 +8,16 @@ import com.reasonix.agent.model.Session;
 import com.reasonix.agent.store.SessionStore;
 import com.reasonix.config.ReasonixConfig;
 import com.reasonix.provider.ChatModel;
-import com.reasonix.provider.ChatMessage;
 import com.reasonix.provider.ChatRequest;
 import com.reasonix.provider.ChatResponse;
-import com.reasonix.tool.PermissionGate;
-import com.reasonix.tool.Tool;
-import com.reasonix.tool.ToolCall;
-import com.reasonix.tool.ToolCallParser;
-import com.reasonix.tool.ToolContext;
-import com.reasonix.tool.ToolExecutionResult;
-import com.reasonix.tool.ToolRegistry;
+import com.reasonix.tool.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ReAct 核心执行循环。
@@ -39,6 +34,7 @@ import java.util.UUID;
  *   <li>工具调用标记清洗，避免把原始标记暴露给用户</li>
  * </ul>
  */
+@Slf4j
 @Component
 public class ReActLoop {
 
@@ -207,6 +203,7 @@ public class ReActLoop {
 
         List<String> toolResults = new ArrayList<>(toolResultMap.values());
         String toolResultText = String.join("\n", toolResults);
+        log.info("toolResultText: {}", toolResultText);
 
         boolean hasFailed = toolResults.stream().anyMatch(text ->
                 text.contains("失败]") || text.contains("异常]") || text.contains("未知工具")

@@ -64,7 +64,7 @@ public class WebFetchTool implements Tool {
 
     @Override
     public ToolExecutionResult execute(ToolContext ctx, java.util.Map<String, Object> arguments) {
-        log.info("WebFetchTool: " + arguments);
+        log.info("WebFetchTool: url={}", arguments.get("url"));
         String url = (String) arguments.getOrDefault("url", "");
         if (url == null || url.isBlank()) {
             log.warn("WebFetchTool: 缺少 URL 参数 (url)");

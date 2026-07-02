@@ -125,4 +125,144 @@ class ToolCallParserTest {
         assertThat(calls.get(0).getToolName()).isEqualTo("list_dir");
         assertThat(calls.get(0).getArguments()).isEmpty();
     }
+
+    // ========== 宽松内联格式：web_fetch{...} / web_fetch {...} ==========
+
+    @Test
+    void shouldParseLooseInlineFormatWithoutSpace() {
+        // 模型输出 "web_fetch{\"url\":\"https://example.com\"}"（{前无空格）
+        String content = "web_fetch{\"url\":\"https://example.com\"}";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).getToolName()).isEqualTo("web_fetch");
+        assertThat(calls.get(0).getArguments()).containsEntry("url", "https://example.com");
+    }
+
+    @Test
+    void shouldParseLooseInlineFormatWithSpace() {
+        // 模型输出 "web_fetch {\"url\":\"https://wttr.in/Jinan\"}"（{前有空格）
+        String content = "web_fetch {\"url\":\"https://wttr.in/Jinan\"}";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).getToolName()).isEqualTo("web_fetch");
+        assertThat(calls.get(0).getArguments()).containsEntry("url", "https://wttr.in/Jinan");
+    }
+
+    @Test
+    void shouldReturnEmptyForPlainTextNotStartingWithToolName() {
+        // 纯文本不以任何已知工具名开头，不触发宽松解析
+        String content = "我来帮您查询济南天气，请稍等。";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void shouldNotTriggerLooseFormatWhenJsonContentStartsWithToolNameButIsNotToolCall() {
+        // 内容以 "web_fetch" 开头但没有 {，不应被宽松格式误识别
+        String content = "web_fetch is a useful tool";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).isEmpty();
+    }
+
+    // ========== XML fallback：parameter 名带 > 或 < 内容标记 ==========
+
+    @Test
+    void shouldParseParamNameWithGreaterThanSeparator() {
+        // 模型输出 "parameter=url\n>=https://..."（>= 在参数名和值之间作分隔符）
+        // 最终参数值应去掉分隔符，只保留 https://...
+        String content = "[tool_use]\nfunction=web_fetch\nparameter=url\n>=https://wttr.in/Jinan?format=j1\n/parameter\n/function\n[/tool_use]";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).getToolName()).isEqualTo("web_fetch");
+        assertThat(calls.get(0).getArguments()).containsEntry("url", "https://wttr.in/Jinan?format=j1");
+    }
+
+    @Test
+    void shouldParseParamValueWithLessThanContentMarker() {
+        // 模型输出 "parameter=url\nhttps://wttr.in/Jinan?format=j1<\n/parameter"
+        // < 是内容标记结束符，不应出现在参数值中
+        String content = "[tool_use]\nfunction=web_fetch\nparameter=url\nhttps://wttr.in/Jinan?format=j1<\n/parameter\n/function\n[/tool_use]";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).getToolName()).isEqualTo("web_fetch");
+        assertThat(calls.get(0).getArguments()).containsEntry("url", "https://wttr.in/Jinan?format=j1");
+    }
+
+    @Test
+    void shouldParseParamValueWithLessThanMarkerWhenValueIsJustLessThan() {
+        // 参数值恰好就是单个 <（边缘情况），解析后值应为空字符串
+        String content = "function=web_fetch\nparameter=url\n<\n/parameter\n/function";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).getToolName()).isEqualTo("web_fetch");
+        assertThat(calls.get(0).getArguments()).containsEntry("url", "");
+    }
+
+    @Test
+    void shouldParseParamWithGreaterThanEqualsSeparatorAndNewlineInValue() {
+        // 实际模型输出: parameter=url>=https://wttr.in/...?format=...%p\n&lang=zh
+        // >= 在参数名和值之间；\n 在 URL 中间（必须保留，不能去掉）
+        String url = "https://wttr.in/Jinan?format=%l:+%c+%t+%h+%w+%p\n&lang=zh";
+        String content = "[tool_use]\nfunction=web_fetch\nparameter=url>=" + url
+                + "\n/parameter\n/function\n[/tool_use]";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).getToolName()).isEqualTo("web_fetch");
+        assertThat(calls.get(0).getArguments()).containsEntry("url", url);
+    }
+
+    // ========== 宽松内联格式：=> / >= 分隔符支持 ==========
+
+    @Test
+    void shouldParseLooseInlineFormatWithEqualsGreaterThanSeparator() {
+        // 模型输出 web_fetch{"url"=>"https://wttr.in/Jinan?format=j1"}
+        String content = "web_fetch{\"url\"=>\"https://wttr.in/Jinan?format=j1\"}";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).getToolName()).isEqualTo("web_fetch");
+        assertThat(calls.get(0).getArguments()).containsEntry("url", "https://wttr.in/Jinan?format=j1");
+    }
+
+    @Test
+    void shouldParseLooseInlineFormatWithGreaterThanEqualsSeparator() {
+        // 模型输出 web_fetch{"url">="https://wttr.in/Jinan?format=j1"}
+        String content = "web_fetch{\"url\">=\"https://wttr.in/Jinan?format=j1\"}";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).getToolName()).isEqualTo("web_fetch");
+        assertThat(calls.get(0).getArguments()).containsEntry("url", "https://wttr.in/Jinan?format=j1");
+    }
+
+    @Test
+    void shouldParseLooseInlineFormatWithEqualsGreaterThanAndNewlineInValue() {
+        // => 分隔符 + URL 值中含 \n
+        String url = "https://wttr.in/Jinan?format=%l:+%c+%t+%h+%w+%p\n&lang=zh";
+        String content = "web_fetch{\"url\"=>\"" + url + "\"}";
+
+        List<ToolCall> calls = parser.parse(content, "[]");
+
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).getToolName()).isEqualTo("web_fetch");
+        assertThat(calls.get(0).getArguments()).containsEntry("url", url);
+    }
 }

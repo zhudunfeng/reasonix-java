@@ -37,16 +37,23 @@ public class ToolCallParser {
 
     /**
      * 提取 function= 工具名。
+     *
+     * <p>【关键修复】使用更严格的正则，仅匹配工具名常见字符集，避免把尾部符号（如 {@code >}）纳入工具名。</p>
      */
-    private static final Pattern NAME_PATTERN = Pattern.compile("function=(\\S+)");
+    private static final Pattern NAME_PATTERN = Pattern.compile("function=([\\w-]+)");
 
     /**
      * 提取所有 parameter=key ... /parameter 参数块。
      *
-     * <p>【关键修复】使用前瞻断言 {@code (?=/parameter\b|$)} 替代 {@code (?:/parameter|$)},
-     * 防止贪婪匹配吞噬后续参数块的结束标签，确保多行参数值能正确解析。</p>
+     * <p>修复: 参数名只匹配 [\w-]+ (字母/数字/下划线/连字符),
+     * 避免将值中的分隔符 (如 >=, =>) 纳入参数名。</p>
+     *
+     * <p>参数值以 </parameter 或 < /parameter 为边界，
+     * 兼容带 < 内容标记的格式。</p>
      */
-    private static final Pattern PARAM_PATTERN = Pattern.compile("parameter=(\\S+)\\s*([\\s\\S]*?)(?=/parameter\\b|$)");
+    private static final Pattern PARAM_PATTERN = Pattern.compile(
+            "parameter=([\\w-]+)\\s*([\\s\\S]*?)(?=<\\s*/parameter\\b|/parameter\\b|$)"
+    );
 
     /**
      * 从模型返回内容里解析工具调用。
@@ -84,6 +91,14 @@ public class ToolCallParser {
         List<ToolCall> fromXml = parseToolCallXml(content);
         if (!fromXml.isEmpty()) {
             return ToolCallParseResult.fromXml(fromXml);
+        }
+
+        // 3. 纯文本兜底解析：支持 "web_fetch{...}" 或 "web_fetch {url: \"...\"}" 等宽松格式
+        //    当 JSON 解析和 XML fallback 都失败时，尝试匹配 "工具名{...}" 模式
+        List<ToolCall> fromLoose = parseLooseInlineFormat(content);
+        if (!fromLoose.isEmpty()) {
+            LOG.debug("通过宽松内联格式解析到 {} 个工具调用", fromLoose.size());
+            return ToolCallParseResult.fromXml(fromLoose);
         }
 
         return ToolCallParseResult.empty();
@@ -166,8 +181,18 @@ public class ToolCallParser {
         return List.of();
     }
 
+    /**
+     * 已知工具名白名单，用于宽松内联格式兜底解析和 flat JSON object 识别。
+     */
+    private static final List<String> KNOWN_TOOLS = List.of(
+            "web_fetch", "bash", "grep", "glob", "ls",
+            "read_file", "write_file", "edit_file", "multi_edit",
+            "task", "run_skill", "move_file", "remember", "todo_write",
+            "code_index", "ask", "exit_plan_mode"
+    );
+
     private ToolCall toToolCall(JsonNode node) {
-        String name = node.has("tool") ? node.get("tool").asText() : null;
+        String name = node.has("tool") ? node.get("tool").asText().trim() : null;
         JsonNode argsNode = node.has("arguments") ? node.get("arguments") : null;
         Map<String, Object> args = Map.of();
         if (argsNode != null && argsNode.isObject()) {
@@ -209,45 +234,186 @@ public class ToolCallParser {
 
         LOG.debug("尝试 XML fallback 解析 tool_use 标签，content 长度：{}", content.length());
 
-        Matcher blockMatcher = BLOCK_PATTERN.matcher(content);
-        while (blockMatcher.find()) {
-            String block = blockMatcher.group(1);
-            LOG.debug("匹配到 tool_use 块，内容预览：{}", block.substring(0, Math.min(block.length(), 80)));
+        // 同时支持两种格式: <tool_call>... 和 [tool_use]...[/tool_use]
+        List<Matcher> blockMatchers = List.of(
+                BLOCK_PATTERN.matcher(content)
+        );
 
-            // 提取 function= 工具名
-            String toolName = "";
-            Matcher nameMatcher = NAME_PATTERN.matcher(block);
-            if (nameMatcher.find()) {
-                toolName = nameMatcher.group(1).trim();
-            }
+        for (Matcher blockMatcher : blockMatchers) {
+            while (blockMatcher.find()) {
+                String block = blockMatcher.group(1);
+                LOG.debug("匹配到 tool_use 块，内容预览：{}", block.substring(0, Math.min(block.length(), 80)));
 
-            if (toolName.isBlank()) {
-                LOG.debug("tool_use 块未匹配到工具名，跳过");
-                continue;
-            }
-
-            Map<String, Object> args = new LinkedHashMap<>();
-
-            // 提取所有 parameter=key ... /parameter 块
-            Matcher paramMatcher = PARAM_PATTERN.matcher(block);
-            while (paramMatcher.find()) {
-                String key = paramMatcher.group(1).trim();
-                String value = paramMatcher.group(2).trim();
-                if (!key.isBlank()) {
-                    args.put(key, value);
-                    LOG.debug("解析参数：{} = {}", key, value.substring(0, Math.min(value.length(), 60)));
+                // 提取 function= 工具名
+                String toolName = "";
+                Matcher nameMatcher = NAME_PATTERN.matcher(block);
+                if (nameMatcher.find()) {
+                    toolName = nameMatcher.group(1).trim();
                 }
-            }
 
-            // 无显式 parameter 块时，将整段内容作为 text 参数
-            if (args.isEmpty() && !block.isBlank()) {
-                args.put("text", block.trim());
-            }
+                if (toolName.isBlank()) {
+                    LOG.debug("tool_use 块未匹配到工具名，跳过");
+                    continue;
+                }
 
-            LOG.debug("解析完成：工具={}，参数数量={}", toolName, args.size());
-            calls.add(new ToolCall(toolName, args));
+                Map<String, Object> args = new LinkedHashMap<>();
+
+                // 提取所有 parameter=key ... /parameter 块
+                Matcher paramMatcher = PARAM_PATTERN.matcher(block);
+                while (paramMatcher.find()) {
+                    String key = paramMatcher.group(1).trim();
+                    String value = paramMatcher.group(2).trim();
+                    // strip 行首的分隔符 >= / => / >（模型将参数名与值用 >=/=> 分隔时,
+                    // 分隔符被参数值正则捕获到值开头）
+                    while (value.startsWith(">=") || value.startsWith("=>")) {
+                        value = value.substring(2).trim();
+                    }
+                    if (value.startsWith(">")) {
+                        value = value.substring(1).trim();
+                    }
+                    // strip 末尾的内容标记结束符 <（来自 <\s*/parameter 边界）
+                    while (value.endsWith("<")) {
+                        value = value.substring(0, value.length() - 1).trim();
+                    }
+                    if (!key.isBlank()) {
+                        args.put(key, value);
+                        LOG.debug("解析参数：{} = {}", key, value.substring(0, Math.min(value.length(), 60)));
+                    }
+                }
+
+                // 无显式 parameter 块时，将整段内容作为 text 参数
+                if (args.isEmpty() && !block.isBlank()) {
+                    args.put("text", block.trim());
+                }
+
+                LOG.debug("解析完成：工具={}，参数数量={}", toolName, args.size());
+                calls.add(new ToolCall(toolName, args));
+            }
         }
         LOG.debug("XML fallback 解析结束，共解析 {} 个工具调用", calls.size());
         return calls;
+    }
+
+    /**
+     * 宽松内联格式兜底解析。
+     *
+     * <p>处理模型输出的宽松格式，例如：</p>
+     * <pre>
+     * web_fetch{"url":"https://example.com"}
+     * web_fetch {"url":"https://example.com"}
+     * web_fetch {\"url\": \"https://example.com\"}
+     * web_fetch {"url"=>"https://example.com"}   // => 分隔符
+     * web_fetch {"url">="https://example.com"}   // >= 分隔符
+     * </pre>
+     *
+     * <p>同时支持无 toolName 前缀的裸 JSON 对象兜底解析，处理类似
+     * {@code {url=>"..."}} 或 {@code {url>="..."}} 的格式。</p>
+     *
+     * <p>注意：本方法只匹配已知工具名+首个 JSON 对象块的组合，避免误伤纯文本内容。</p>
+     *
+     * @param content 模型返回文本
+     * @return 解析出的工具调用列表
+     */
+    private List<ToolCall> parseLooseInlineFormat(String content) {
+        String trimmed = content.trim();
+
+        // ========== 第1步：toolName{...} 或 toolName {...} 格式 ==========
+        for (String toolName : KNOWN_TOOLS) {
+            // 匹配 "toolName{...}" 或 "toolName {...}"
+            if (trimmed.startsWith(toolName + "{") || trimmed.startsWith(toolName + " {")) {
+                int jsonStart = trimmed.indexOf('{', toolName.length());
+                if (jsonStart < 0) {
+                    continue;
+                }
+                // 找匹配的闭合 }（处理嵌套 JSON）
+                int depth = 0;
+                int jsonEnd = -1;
+                for (int i = jsonStart; i < trimmed.length(); i++) {
+                    char ch = trimmed.charAt(i);
+                    if (ch == '{') depth++;
+                    else if (ch == '}') {
+                        depth--;
+                        if (depth == 0) {
+                            jsonEnd = i;
+                            break;
+                        }
+                    }
+                }
+                if (jsonEnd < 0) {
+                    continue;
+                }
+                String jsonPart = trimmed.substring(jsonStart, jsonEnd + 1).trim();
+                // 直接解析 flat JSON 对象作为 arguments，不经过 tryParseJsonInner
+                // 避免与 toToolCall 中的 Jackson 转换异常冲突
+                // 第1步：先尝试标准 JSON 解析
+                try {
+                    JsonNode argsNode = OBJECT_MAPPER.readTree(jsonPart);
+                    if (argsNode.isObject()) {
+                        Map<String, Object> args = OBJECT_MAPPER.convertValue(argsNode, Map.class);
+                        LOG.debug("宽松格式解析成功：工具={}，参数={}", toolName, args.keySet());
+                        return List.of(new ToolCall(toolName, args));
+                    }
+                } catch (Exception e) {
+                    LOG.debug("宽松格式 JSON 解析失败，工具={}，错误={}", toolName, e.getMessage());
+                }
+                // 第2步：尝试将 => / >= 分隔符替换为标准 : 后重新解析
+                // 处理模型输出 {url=>"..."} 或 {url>="..."} 等非标准 JSON
+                try {
+                    String fixed = jsonPart.replaceAll("=>[ \\t]*", ":")
+                                           .replaceAll(">=[ \\t]*", ":");
+                    JsonNode argsNode = OBJECT_MAPPER.readTree(fixed);
+                    if (argsNode.isObject()) {
+                        Map<String, Object> args = OBJECT_MAPPER.convertValue(argsNode, Map.class);
+                        LOG.debug("宽松格式解析成功(已修复分隔符)：工具={}，参数={}", toolName, args.keySet());
+                        return List.of(new ToolCall(toolName, args));
+                    }
+                } catch (Exception e2) {
+                    LOG.debug("宽松格式修复分隔符后仍解析失败，工具={}，错误={}", toolName, e2.getMessage());
+                }
+            }
+        }
+        // 第3步：整段内容本身就是裸 JSON 对象（如 {url=>"..."} 无 toolName 前缀）
+        // 尝试匹配已知工具名的参数 key 做 fallback
+        for (String toolName : KNOWN_TOOLS) {
+            // 构造 "key=>value" 或 "key>=value" 模式查找工具名对应的参数
+            // 例如 web_fetch 对应 url=>"..." 或 url>="..."
+            try {
+                String bare = trimmed;
+                // 去掉外层 {}（如果是纯对象）
+                if (bare.startsWith("{") && bare.endsWith("}")) {
+                    bare = bare.substring(1, bare.length() - 1).trim();
+                }
+                // 尝试标准解析
+                JsonNode argsNode = OBJECT_MAPPER.readTree("{" + bare + "}");
+                if (argsNode.isObject()) {
+                    Map<String, Object> args = OBJECT_MAPPER.convertValue(argsNode, Map.class);
+                    if (!args.isEmpty()) {
+                        LOG.debug("宽松格式(裸对象)解析成功：工具={}，参数={}", toolName, args.keySet());
+                        return List.of(new ToolCall(toolName, args));
+                    }
+                }
+            } catch (Exception e3) {
+                LOG.debug("宽松格式(裸对象)标准 JSON 解析失败，工具={}，错误={}", toolName, e3.getMessage());
+            }
+            // 尝试修复 =>/=> 分隔符后解析
+            try {
+                String bare = trimmed;
+                if (bare.startsWith("{") && bare.endsWith("}")) {
+                    bare = bare.substring(1, bare.length() - 1).trim();
+                }
+                String fixed = "{" + bare.replaceAll("=>[ \\t]*", ":").replaceAll(">=[ \\t]*", ":") + "}";
+                JsonNode argsNode = OBJECT_MAPPER.readTree(fixed);
+                if (argsNode.isObject()) {
+                    Map<String, Object> args = OBJECT_MAPPER.convertValue(argsNode, Map.class);
+                    if (!args.isEmpty()) {
+                        LOG.debug("宽松格式(裸对象)解析成功(已修复分隔符)：工具={}，参数={}", toolName, args.keySet());
+                        return List.of(new ToolCall(toolName, args));
+                    }
+                }
+            } catch (Exception e4) {
+                LOG.debug("宽松格式(裸对象)修复分隔符后仍解析失败，工具={}，错误={}", toolName, e4.getMessage());
+            }
+        }
+        return List.of();
     }
 }
