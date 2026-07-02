@@ -8,6 +8,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -62,10 +63,17 @@ public class OpenAiCompatibleChatModel implements ChatModel {
             Map<String, Object> body = Map.of(
                     "model", modelName != null && !modelName.isBlank() ? modelName : modelId,
                     "messages", request.getMessages().stream()
-                            .map(msg -> Map.of(
-                                    "role", msg.getRole().name().toLowerCase(),
-                                    "content", msg.getContent()
-                            ))
+                            .map(msg -> {
+                                Map<String, Object> map = new LinkedHashMap<>();
+                                map.put("role", msg.getRole().name().toLowerCase());
+                                if (msg.getToolCallId() != null && !msg.getToolCallId().isBlank()) {
+                                    map.put("tool_call_id", msg.getToolCallId());
+                                }
+                                if (msg.getContent() != null) {
+                                    map.put("content", msg.getContent());
+                                }
+                                return map;
+                            })
                             .toList(),
                     "stream", false,
                     "temperature", request.getTemperature() != null ? request.getTemperature() : 0.7

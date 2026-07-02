@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 /**
  * ReAct 核心执行循环。
@@ -116,6 +117,22 @@ public class ReActLoop {
 
             String assistantText = reasoning(session, toolSchemasJson, listener);
             List<ToolCall> toolCalls = toolCallParser.parse(assistantText, toolSchemasJson);
+
+            // 保存 assistant tool-use 消息，携带 tool_call_id，避免 provider 因缺少 tool_call_id 报错
+            if (!toolCalls.isEmpty()) {
+                List<com.reasonix.agent.model.ChatMessage> toolUseMessages = new ArrayList<>();
+                for (ToolCall toolCall : toolCalls) {
+                    Map<String, Object> payload = new LinkedHashMap<>();
+                    payload.put("tool_call_id", toolCall.getToolCallId());
+                    payload.put("tool_name", toolCall.getToolName());
+                    payload.put("arguments", toolCall.getArguments() != null ? toolCall.getArguments() : Map.of());
+                    toolUseMessages.add(new com.reasonix.agent.model.ChatMessage(
+                            com.reasonix.agent.model.ChatMessage.Role.ASSISTANT,
+                            safeJson(assistantText) + "\n[tool_use]\n" + safeJson(payload) + "\n[/tool_use]"
+                    ));
+                }
+                session.getHistory().addAll(toolUseMessages);
+            }
 
             // 将模型纯文本部分追加到历史，避免原始工具标记直接暴露
             String visibleText = stripToolCallMarkers(assistantText);
@@ -344,6 +361,12 @@ public class ReActLoop {
                     roundResultMap.put(toolName, toolResultText(toolName, resultText));
                     toolResultMap.put(toolName, roundResultMap.get(toolName));
 
+                    // 回写 tool result，携带 tool_call_id，避免 provider 因 invalid tool message 报错
+                    session.getHistory().add(new com.reasonix.agent.model.ChatMessage(
+                            com.reasonix.agent.model.ChatMessage.Role.TOOL,
+                            "tool_call_id=" + toolCall.getToolCallId() + "\n" + roundResultMap.get(toolName)
+                    ));
+
                     if (listener != null) {
                         listener.onEvent(StreamingEvent.builder(StreamingEventType.TOOL_RESULT)
                                 .sessionId(session.getSessionId())
@@ -357,6 +380,11 @@ public class ReActLoop {
                     String errorText = "[" + toolName + " 异常] " + e.getMessage();
                     roundResultMap.put(toolName, toolResultText(toolName, errorText));
                     roundHasFailure = true;
+
+                    session.getHistory().add(new com.reasonix.agent.model.ChatMessage(
+                            com.reasonix.agent.model.ChatMessage.Role.TOOL,
+                            "tool_call_id=" + toolCall.getToolCallId() + "\n" + roundResultMap.get(toolName)
+                    ));
 
                     if (listener != null) {
                         listener.onEvent(StreamingEvent.builder(StreamingEventType.TOOL_RESULT)
@@ -542,5 +570,13 @@ public class ReActLoop {
     private boolean shouldCompact(Session session) {
         int maxHistorySize = 64;
         return compactService.shouldCompact(session, maxHistorySize);
+    }
+
+    private String safeJson(Object value) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(value);
+        } catch (Exception e) {
+            return String.valueOf(value);
+        }
     }
 }
