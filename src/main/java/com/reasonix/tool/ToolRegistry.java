@@ -1,5 +1,6 @@
 package com.reasonix.tool;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -8,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 工具注册表 - 管理所有已注册工具
  */
+@Slf4j
 @Component
 public class ToolRegistry {
     private final Map<String, Tool> tools = new ConcurrentHashMap<>();
@@ -19,6 +21,7 @@ public class ToolRegistry {
         }
         tools.put(tool.name(), tool);
         registrationOrder.add(tool);
+        log.info("Registered tool: {}", tool.name());
     }
 
     public Tool get(String name) {

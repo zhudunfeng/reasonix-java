@@ -71,13 +71,17 @@ public class ReActLoop {
         Session session = sessionStore.get(sessionId).orElseGet(() -> sessionStore.create(sessionId));
         session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.USER, query));
 
+        // 最大步数限制
         int maxSteps = reasonixConfig.getMaxSteps() > 0 ? reasonixConfig.getMaxSteps() : 8;
         String toolSchemasJson = toolRegistry.getToolSchemasJson();
 
+        // 最终答案
         String finalAnswer = null;
 
+        // loop
         for (int step = 0; step < maxSteps; step++) {
             if (listener != null) {
+                // 推送思考事件
                 listener.onEvent(StreamingEvent.builder(StreamingEventType.THINK)
                         .sessionId(sessionId)
                         .modelId(session.getModelId() != null ? session.getModelId() : reasonixConfig.getDefaultModel())
@@ -85,6 +89,7 @@ public class ReActLoop {
                         .build());
             }
 
+            // 构建提示: 系统提示与用户提示
             List<com.reasonix.provider.ChatMessage> prompt = buildPrompt(session, toolSchemasJson);
             ChatRequest request = new ChatRequest(
                     session.getModelId() != null ? session.getModelId() : reasonixConfig.getDefaultModel(),
@@ -94,6 +99,7 @@ public class ReActLoop {
                     false
             );
 
+            // 调用大模型
             ChatResponse response = chatModel.chat(request);
             String content = response.getContent() != null ? response.getContent() : "";
 
@@ -172,6 +178,7 @@ public class ReActLoop {
                     ToolContext ctx = ToolContext.of(session.getSessionId(), java.nio.file.Path.of("."));
                     long start = System.currentTimeMillis();
                     try {
+                        // 真正执行工具
                         ToolExecutionResult result = tool.execute(ctx, toolCall.getArguments());
                         long duration = System.currentTimeMillis() - start;
                         String resultText = result.isSuccess()
@@ -205,6 +212,7 @@ public class ReActLoop {
                     }
                 }
 
+                // 如果没有失败或者超过最大工具调用重试，则跳出循环
                 if (!roundHasFailure || retryAttempt >= maxToolRetries) {
                     break;
                 }
