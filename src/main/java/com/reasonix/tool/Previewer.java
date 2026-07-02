@@ -17,4 +17,11 @@ public interface Previewer {
      * @return 变更摘要
      */
     Change preview(String toolName, Map<String, Object> arguments);
+
+    /**
+     * 判断是否为只读工具。
+     *
+     * <p>默认实现委托给 {@link ToolRegistry}，若工具不存在则返回 {@code false}。</p>
+     */
+    boolean isReadOnly(String toolName, Map<String, Object> arguments);
 }

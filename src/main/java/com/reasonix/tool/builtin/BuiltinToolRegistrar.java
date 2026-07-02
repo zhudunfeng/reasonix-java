@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class BuiltinToolRegistrar {
 
+    private final ToolRegistry registry;
+
     public BuiltinToolRegistrar(ToolRegistry registry,
                                 BashTool bashTool,
                                 ReadFileTool readFileTool,
@@ -19,6 +21,7 @@ public class BuiltinToolRegistrar {
                                 LsTool lsTool,
                                 WebFetchTool webFetchTool,
                                 TodoWriteTool todoWriteTool) {
+        this.registry = registry;
         registry.register(bashTool);
         registry.register(readFileTool);
         registry.register(writeFileTool);
@@ -28,5 +31,9 @@ public class BuiltinToolRegistrar {
         registry.register(lsTool);
         registry.register(webFetchTool);
         registry.register(todoWriteTool);
+    }
+
+    public ToolRegistry getRegistry() {
+        return registry;
     }
 }

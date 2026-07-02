@@ -207,13 +207,13 @@ public class ReActLoop {
 
         List<String> toolResults = new ArrayList<>(toolResultMap.values());
         String toolResultText = String.join("\n", toolResults);
-        session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.TOOL, toolResultText, firstToolCallId(toolCalls)));
 
         boolean hasFailed = toolResults.stream().anyMatch(text ->
                 text.contains("失败]") || text.contains("异常]") || text.contains("未知工具")
                         || text.contains("被权限策略拒绝") || text.contains("需要审批")
         );
         if (hasFailed) {
+            session.getHistory().add(new com.reasonix.agent.model.ChatMessage(com.reasonix.agent.model.ChatMessage.Role.TOOL, toolResultText, firstToolCallId(toolCalls)));
             return summary(session, toolSchemasJson, listener);
         }
 

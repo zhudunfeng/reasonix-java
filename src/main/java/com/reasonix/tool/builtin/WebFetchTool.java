@@ -3,6 +3,7 @@ package com.reasonix.tool.builtin;
 import com.reasonix.tool.Tool;
 import com.reasonix.tool.ToolContext;
 import com.reasonix.tool.ToolExecutionResult;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -26,6 +27,7 @@ import java.util.Map;
  *   <li>统一超时与异常翻译，避免把原始异常细节直接暴露给用户</li>
  * </ul>
  */
+@Slf4j
 @Component
 public class WebFetchTool implements Tool {
 
@@ -62,20 +64,30 @@ public class WebFetchTool implements Tool {
 
     @Override
     public ToolExecutionResult execute(ToolContext ctx, java.util.Map<String, Object> arguments) {
+        log.info("WebFetchTool: " + arguments);
         String url = (String) arguments.getOrDefault("url", "");
         if (url == null || url.isBlank()) {
+            log.warn("WebFetchTool: 缺少 URL 参数 (url)");
             return ToolExecutionResult.error("缺少 URL 参数 (url)");
         }
 
         String normalized = url.trim();
+        if (normalized.contains("\n")) {
+            normalized = normalized.substring(0, normalized.indexOf('\n')).trim();
+        }
+        if (normalized.contains("\r")) {
+            normalized = normalized.substring(0, normalized.indexOf('\r')).trim();
+        }
         String scheme;
         try {
             URI uri = URI.create(normalized);
             scheme = uri.getScheme();
         } catch (Exception e) {
+            log.error("WebFetchTool: 无法解析 URL: " + normalized);
             return ToolExecutionResult.error("URL 格式无效: " + normalized);
         }
         if (scheme == null || (!scheme.equals("http") && !scheme.equals("https"))) {
+            log.error("WebFetchTool: 仅支持 http:// 或 https:// 开头 URL");
             return ToolExecutionResult.error("仅支持 http:// 或 https:// 开头 URL");
         }
 
@@ -102,6 +114,7 @@ public class WebFetchTool implements Tool {
                     .orElse("");
 
             if (!isTextLikeContentType(contentType) && !isHtmlStatusCode(status)) {
+                log.error("WebFetchTool: 抓取失败，非文本页面或不可访问: status=" + status + ", content-type=" + contentType);
                 return ToolExecutionResult.error("抓取失败，非文本页面或不可访问: status=" + status + ", content-type=" + contentType);
             }
 
@@ -126,9 +139,11 @@ public class WebFetchTool implements Tool {
             }
 
             result.append("\n\n").append(body);
+            log.info("WebFetchTool: 抓取成功 url={}, status={}, size={}", finalUrl, status, body.length());
             return ToolExecutionResult.success(result.toString());
 
         } catch (Exception e) {
+            log.error("WebFetchTool: 抓取网页失败: " + e.getMessage());
             return ToolExecutionResult.error("抓取网页失败: " + e.getMessage());
         }
     }

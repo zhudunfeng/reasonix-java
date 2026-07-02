@@ -58,6 +58,11 @@ public class PermissionGate {
             return new Result(Decision.DENIED, null);
         }
 
+        // 只读工具在 ask 模式下直接允许，避免无意义的重试循环
+        if (previewer.isReadOnly(toolName, arguments)) {
+            return new Result(Decision.ALLOWED, null);
+        }
+
         // 默认 ask 模式：创建审批记录
         Change change = previewer.preview(toolName, arguments);
         ToolApproval approval = toolApprovalStore.createPending(toolName, arguments != null ? arguments : Map.of(), sessionId);
