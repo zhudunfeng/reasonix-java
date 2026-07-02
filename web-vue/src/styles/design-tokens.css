@@ -1,0 +1,268 @@
+/*
+ * web-vue — design tokens
+ *
+ * 来源：reasonix-go/desktop/frontend/src/styles.css
+ * 复刻 graphite 主题（默认）+ dark base + light fallback
+ */
+
+/* ── Dark base ─────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: dark;
+
+  /* 语义化色调：graphite 默认深色 */
+  --stage: #08090c;
+  --surface: #15161a;
+  --surface-2: #191a1f;
+  --surface-3: #101115;
+  --panel: #15161a;
+  --bg: #0c0d10;
+  --bg-soft: #101115;
+  --bg-elev: #15161a;
+  --bg-elev-2: #191a1f;
+  --sidebar-bg: #15161a;
+  --sidebar-hover: #1f2026;
+  --sidebar-active: rgba(255, 106, 61, 0.16);
+  --chat-bg: #0c0d10;
+  --workspace-preview-bg: #101115;
+  --workspace-files-bg: #15161a;
+  --workspace-files-hover: #202126;
+  --workspace-selection-bg: rgba(255, 106, 61, 0.16);
+  --workspace-selection-fg: #ff9a52;
+  --workspace-selection-bar: #ff6a3d;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-2: rgba(255, 255, 255, 0.2);
+  --border-soft: rgba(255, 255, 255, 0.07);
+  --text: #f1f1ef;
+  --text-2: #a7a8ad;
+  --text-3: #6c6e74;
+  --fg: #f1f1ef;
+  --fg-dim: #a7a8ad;
+  --fg-faint: #6c6e74;
+  --accent: #ff6a3d;
+  --accent-fg: #0c0d10;
+  --accent-text: #ffffff;
+  --accent-soft: rgba(255, 106, 61, 0.16);
+  --accent-strong: #ff9a52;
+  --ok: #3ad17e;
+  --warn: #e3a23a;
+  --err: #f0573f;
+  --control-primary-bg: #ff6a3d;
+  --control-primary-fg: #0c0d10;
+  --code-bg: #101115;
+  --grad: linear-gradient(120deg, #ff6a3d, #ff9a52);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 14px 40px rgba(0, 0, 0, 0.6);
+  --r-s: 5px;
+  --r: 8px;
+  --r-l: 11px;
+  --radius: 8px;
+
+  /* 滚动条 */
+  --scrollbar-size: 10px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: color-mix(in srgb, var(--fg-faint) 42%, transparent);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--fg-dim) 56%, transparent);
+  --scrollbar-thumb-active: color-mix(in srgb, var(--accent) 52%, var(--fg-faint));
+  --scrollbar-corner: transparent;
+
+  /* z-index scale */
+  --z-local-raised: 2;
+  --z-local-handle: 4;
+  --z-local-handle-active: 5;
+  --z-layout-resizer: 12;
+  --z-inline-sticky: 20;
+  --z-local-backdrop: 30;
+  --z-local-popover: 31;
+  --z-workspace-float: 40;
+  --z-app-chrome: 70;
+  --z-drawer-backdrop: 90;
+  --z-menu-backdrop: 95;
+  --z-menu: 96;
+  --z-dock: 100;
+  --z-floating-menu: 110;
+  --z-topicbar-menu: 210;
+  --z-startup-overlay: 300;
+  --z-modal: 1200;
+  --z-overlay-backdrop: 1300;
+  --z-popover: 1301;
+  --z-toast: 1302;
+  --z-tooltip: 1302;
+  --z-onboarding: 9999;
+
+  /* 动效 token */
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 340ms;
+  --dur-slower: 420ms;
+  --ease-out: cubic-bezier(0.2, 0.72, 0.2, 1);
+  --ease-decelerate: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --motion-pop-scale: 0.98;
+  --motion-rise: 4px;
+
+  /* 字体 */
+  --font-scale: 1;
+  --text-2xs: calc(10px * var(--font-scale));
+  --text-xs: calc(11px * var(--font-scale));
+  --text-sm: calc(12px * var(--font-scale));
+  --text-md: calc(13px * var(--font-scale));
+  --text-base: calc(14px * var(--font-scale));
+  --text-lg: calc(15px * var(--font-scale));
+  --text-xl: calc(18px * var(--font-scale));
+  --font-caption: var(--text-xs);
+  --font-code: var(--text-sm);
+  --font-content: var(--text-base);
+  --font-control: var(--text-md);
+  --font-control-small: var(--text-sm);
+  --font-status: var(--font-control-small);
+  --statusbar-dock-height: max(30px, calc(28px * var(--font-scale)));
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei",
+    "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+  --font-content-family: var(--font-ui);
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Code",
+    Consolas, "Liberation Mono", Menlo, monospace;
+  --font-symbol: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji", sans-serif;
+  --font-smoothing: antialiased;
+  --text-rendering: optimizeLegibility;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-strong: 600;
+
+  /* component recipes */
+  --list-row-height: 38px;
+  --list-row-radius: 7px;
+  --list-row-gap: 10px;
+  --list-row-px: 10px;
+  --list-row-title: var(--fg-dim);
+  --list-row-meta: var(--fg-faint);
+  --list-row-hover-bg: var(--sidebar-hover);
+  --list-row-current-bg: color-mix(in srgb, var(--accent) 7%, var(--sidebar-hover));
+  --list-row-current-title: var(--fg);
+  --list-row-current-meta: var(--accent);
+  --button-height: 34px;
+  --button-small-height: 30px;
+  --button-icon-size: 30px;
+  --button-radius: 8px;
+  --button-px: 12px;
+  --button-bg: color-mix(in srgb, var(--bg-elev-2) 62%, var(--bg-soft));
+  --button-bg-hover: color-mix(in srgb, var(--bg-elev-2) 82%, var(--bg-soft));
+  --button-border: var(--border);
+  --button-border-hover: color-mix(in srgb, var(--fg-faint) 48%, var(--border));
+  --button-fg: var(--fg);
+  --button-muted-fg: var(--fg-dim);
+  --button-danger-bg: color-mix(in srgb, var(--err) 10%, var(--bg-elev));
+  --button-danger-border: color-mix(in srgb, var(--err) 30%, var(--border));
+  --button-danger-fg: var(--err);
+  --focus-ring: 0 0 0 3px var(--accent-soft);
+  --maxw: 940px;
+  --mono: var(--font-mono);
+  --sans: var(--font-ui);
+  --font-sans: var(--font-ui);
+
+  /* chat */
+  --chat-user-bg: color-mix(in srgb, var(--accent) 16%, var(--bg-elev-2));
+  --chat-user-border: color-mix(in srgb, var(--accent) 28%, var(--border-soft));
+  --chat-user-fg: var(--fg);
+  --chat-user-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 10%, transparent);
+
+  /* diff */
+  --add-bg: rgba(116, 184, 122, 0.12);
+  --add-fg: #82c98a;
+  --del-bg: rgba(224, 105, 106, 0.12);
+  --del-fg: #e58587;
+
+  /* syntax (One Dark-tuned) */
+  --hl-keyword: #c678dd;
+  --hl-string: #98c379;
+  --hl-number: #d19a66;
+  --hl-comment: #6a6a72;
+  --hl-func: #61afef;
+  --hl-type: #e5c07b;
+  --hl-builtin: #56b6c2;
+  --hl-meta: #7f848e;
+}
+
+/* ── Light fallback (auto / light theme) ─────────────────────────────── */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+    --bg: #f7f8fb;
+    --bg-soft: #eef2f7;
+    --bg-elev: #ffffff;
+    --bg-elev-2: #f2f5f9;
+    --sidebar-bg: #f3f6fa;
+    --sidebar-hover: #e8edf4;
+    --sidebar-active: #eaf1ff;
+    --chat-bg: #ffffff;
+    --workspace-preview-bg: #ffffff;
+    --workspace-files-bg: #f6f8fb;
+    --workspace-files-hover: #edf2f7;
+    --workspace-selection-bg: #eaf1ff;
+    --workspace-selection-fg: var(--accent);
+    --workspace-selection-bar: var(--accent);
+    --border: #d8dee8;
+    --border-soft: #e7ebf2;
+    --fg: #111827;
+    --fg-dim: #4b5563;
+    --fg-faint: #8a94a6;
+    --accent: #2f5fa8;
+    --accent-fg: #fff;
+    --accent-soft: rgba(47, 95, 168, 0.12);
+    --accent-strong: #244f91;
+    --chat-user-bg: color-mix(in srgb, var(--accent) 9%, var(--bg-elev));
+    --chat-user-border: color-mix(in srgb, var(--accent) 22%, var(--border-soft));
+    --chat-user-fg: var(--fg);
+    --chat-user-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 8%, transparent);
+    --ok: #15803d;
+    --warn: #b45309;
+    --err: #dc2626;
+    --add-bg: rgba(21, 128, 61, 0.08);
+    --add-fg: #15803d;
+    --del-bg: rgba(220, 38, 38, 0.08);
+    --del-fg: #dc2626;
+    --hl-keyword: #cf222e;
+    --hl-string: #0a3069;
+    --hl-number: #0550ae;
+    --hl-comment: #6e7781;
+    --hl-func: #8250df;
+    --hl-type: #116329;
+    --hl-builtin: #0550ae;
+    --hl-meta: #6e7781;
+  }
+}
+
+/* ── 滚动条（Cross-browser） ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+::-webkit-scrollbar-thumb:active { background: var(--scrollbar-thumb-active); }
+::-webkit-scrollbar-corner { background: var(--scrollbar-corner); }
+
+* { box-sizing: border-box; }
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: var(--font-smoothing);
+  text-rendering: var(--text-rendering);
+}
+
+/* ── prefers-reduced-motion ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
